@@ -131,13 +131,30 @@ export default function Home() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white relative">
+    <div className="relative flex flex-col min-h-screen w-full overflow-hidden bg-white/40">
+      {/* ========================================================
+          FONDO "MESH GRADIENT" VÍVIDO Y VIBRANTE (COLORES MÁS VIVOS)
+         ======================================================== */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+        {/* Blob 1: Celeste Eléctrico Vívido */}
+        <div className="absolute top-[-10%] left-[-10%] w-[55vw] h-[55vw] rounded-full bg-sky-400/80 mix-blend-multiply filter blur-[90px] opacity-85 animate-blob" />
+
+        {/* Blob 2: Azul Rey / Índigo Intenso Vívido */}
+        <div className="absolute top-[15%] right-[-10%] w-[65vw] h-[65vw] rounded-full bg-blue-600/70 mix-blend-multiply filter blur-[100px] opacity-80 animate-blob animation-delay-2000" />
+
+        {/* Blob 3: Cian Brillante Vívido */}
+        <div className="absolute bottom-[-15%] left-[15%] w-[55vw] h-[55vw] rounded-full bg-cyan-400/75 mix-blend-multiply filter blur-[95px] opacity-85 animate-blob animation-delay-4000" />
+
+        {/* Blob 4: Índigo Azul Profundo Vívido */}
+        <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-indigo-600/65 mix-blend-multiply filter blur-[100px] opacity-80 animate-blob animation-delay-2000" />
+      </div>
+
       <Navbar />
 
       {/* Indicador de Progreso (Stepper) presente en Sedes, Reserva y Pago */}
       {vistaActual !== "inicio" && <Stepper currentStep={vistaActual} />}
 
-      <main className="flex-grow">
+      <main className="flex-grow relative z-10">
         {/* PANTALLA 1: INICIO (Hero + Explicación del proceso en 3 pasos) */}
         {vistaActual === "inicio" && (
           <Hero

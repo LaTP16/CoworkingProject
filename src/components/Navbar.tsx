@@ -10,13 +10,13 @@ export default function Navbar() {
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo tipográfico reservaYA */}
+          {/* Logo tipográfico EspaciApp */}
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
               <Building2 className="w-5 h-5" />
             </div>
             <a href="#" className="text-2xl font-extrabold tracking-tight text-gray-900">
-              reserva<span className="text-blue-600">YA</span>
+              Espaci<span className="text-blue-600">App</span>
             </a>
           </div>
 

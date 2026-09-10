@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "reservaYA - Tu espacio de trabajo ideal",
+  title: "EspaciApp - Tu espacio de trabajo ideal",
   description: "Reserva escritorios, salas de reuniones y oficinas privadas en las mejores ubicaciones de la ciudad.",
 };
 

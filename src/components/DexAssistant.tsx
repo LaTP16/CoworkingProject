@@ -90,7 +90,7 @@ const faqData: FAQItem[] = [
     topic: "Ubicaciones y Contacto",
     question: "¿Dónde están ubicadas las sedes y cuáles son los canales de atención?",
     answer:
-      "Contamos con sedes en Parque de la Amistad, Surco Pueblo y Castilla. Puedes contactarnos por WhatsApp al +51 987 654 321 o al correo soporte@reservaya.pe.",
+      "Contamos con sedes en Parque de la Amistad, Surco Pueblo y Castilla. Puedes contactarnos por WhatsApp al +51 987 654 321 o al correo soporte@espaciapp.pe.",
   },
 ];
 

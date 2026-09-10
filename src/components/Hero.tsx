@@ -1,115 +1,648 @@
+"use client";
+
+import { useState, useEffect, useRef } from "react";
 import {
-  ArrowRight,
   Sparkles,
+  ArrowRight,
+  Send,
   Building2,
   Calendar,
   CreditCard,
+  Star,
+  MessageSquare,
+  MapPin,
+  X,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
+  Wifi,
+  Coffee,
+  ShieldCheck,
 } from "lucide-react";
-import DexAssistant from "@/components/DexAssistant";
+import { SEDES_DATABASE, SpaceCategory, SedeInfo } from "@/data/sedesData";
+import SpaceDetailModal from "@/components/SpaceDetailModal";
 
 interface HeroProps {
   onVerSedes?: () => void;
   onSelectSede?: (sedeId: string) => void;
 }
 
-export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
-  return (
-    <section className="py-12 sm:py-16 bg-gradient-to-b from-white via-gray-50/50 to-white overflow-hidden">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center space-y-6 sm:space-y-8">
-        {/* Antetítulo */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-blue-700 text-xs sm:text-sm font-semibold">
-          <Sparkles className="w-4 h-4 text-blue-600" />
-          <span>Reserva flexible por horas o días</span>
-        </div>
+const TYPEWRITER_PHRASES = [
+  "Busco un lugar tranquilo para estudiar...",
+  "Quiero reunirme con mi equipo...",
+  "Necesito una oficina privada por un día...",
+  "Busco una sala de reuniones con pantalla y café...",
+];
 
+const CAROUSEL_SEDES = [
+  {
+    id: "parque-amistad",
+    name: "Sede Parque de la Amistad",
+    tag: "Zona Verde & Silencioso",
+    location: "Av. Caminos del Inca 2100, Surco",
+    spacesCount: "54 escritorios • 6 privadas • 4 salas",
+    rating: 4.9,
+    bgGradient: "from-blue-600 via-blue-700 to-sky-500",
+    features: ["Wi-Fi 500 Mbps", "Café Gourmet Libre", "Áreas Verdes"],
+  },
+  {
+    id: "surco-pueblo",
+    name: "Sede Surco Pueblo",
+    tag: "Céntrico & Dinámico",
+    location: "Jr. Bolognesi 340, Surco Pueblo",
+    spacesCount: "34 estaciones • 5 privadas • 4 reuniones",
+    rating: 4.88,
+    bgGradient: "from-indigo-600 via-blue-800 to-sky-400",
+    features: ["Pizarras Vidrio", "Videoconferencia 4K", "Aire Acondicionado"],
+  },
+  {
+    id: "castilla",
+    name: "Sede Castilla",
+    tag: "Tecnológico & Premium",
+    location: "Av. Mariscal Castilla 850, Surco",
+    spacesCount: "16 premium flex • 2 ejec. • Lounge Social",
+    rating: 4.95,
+    bgGradient: "from-sky-600 via-cyan-600 to-blue-700",
+    features: ["Vistas Panorámicas", "Estaciones Ergonomía A1", "Lounge Barista"],
+  },
+  {
+    id: "miraflores",
+    name: "Sede Miraflores Executive",
+    tag: "Business & Vista al Mar",
+    location: "Av. Larco 1020, Miraflores",
+    spacesCount: "40 estaciones • 8 oficinas • 2 directorios",
+    rating: 4.92,
+    bgGradient: "from-blue-800 via-indigo-700 to-sky-500",
+    features: ["Terraza Networking", "Salas de Directorio", "Cafetería Gourmet"],
+  },
+  {
+    id: "san-isidro",
+    name: "Sede San Isidro Financial",
+    tag: "Corporativo & Innovación",
+    location: "Av. Rivera Navarrete 450, San Isidro",
+    spacesCount: "60 escritorios • 12 privadas • Pods acústicos",
+    rating: 4.97,
+    bgGradient: "from-sky-500 via-blue-600 to-indigo-800",
+    features: ["Pods Insonorizados", "Acceso 24/7", "Valet Parking"],
+  },
+];
+
+export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
+  const [inputValue, setInputValue] = useState("");
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [charIndex, setCharIndex] = useState(0);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Estados para el panel de sugerencias y modal de reseñas
+  const [activePrompt, setActivePrompt] = useState<string | null>(null);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [activeModalData, setActiveModalData] = useState<{
+    space: SpaceCategory;
+    sede: SedeInfo;
+  } | null>(null);
+
+  // Estados para el Carrusel Horizontal Automático y Manual
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const [isCarouselPaused, setIsCarouselPaused] = useState(false);
+
+  const suggestionsRef = useRef<HTMLDivElement>(null);
+
+  // Animación Typewriter para el placeholder del input conversacional
+  useEffect(() => {
+    const currentPhrase = TYPEWRITER_PHRASES[phraseIndex];
+
+    let typingSpeed = isDeleting ? 30 : 60;
+
+    if (!isDeleting && charIndex === currentPhrase.length) {
+      typingSpeed = 2200;
+    } else if (isDeleting && charIndex === 0) {
+      setIsDeleting(false);
+      setPhraseIndex((prevIndex) => (prevIndex + 1) % TYPEWRITER_PHRASES.length);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      setCharIndex((prevChar) => {
+        if (!isDeleting && prevChar < currentPhrase.length) {
+          return prevChar + 1;
+        } else if (isDeleting && prevChar > 0) {
+          return prevChar - 1;
+        }
+        return prevChar;
+      });
+
+      if (!isDeleting && charIndex === currentPhrase.length) {
+        setIsDeleting(true);
+      }
+    }, typingSpeed);
+
+    return () => clearTimeout(timer);
+  }, [charIndex, isDeleting, phraseIndex]);
+
+  // Avance Automático del Carrusel Horizontal
+  useEffect(() => {
+    if (isCarouselPaused) return;
+
+    const interval = setInterval(() => {
+      setCurrentSlideIndex((prev) => (prev + 1) % CAROUSEL_SEDES.length);
+    }, 3800);
+
+    return () => clearInterval(interval);
+  }, [isCarouselPaused]);
+
+  const currentPlaceholder = TYPEWRITER_PHRASES[phraseIndex].substring(
+    0,
+    charIndex
+  );
+
+  const handleSearchSubmit = (textToSearch?: string) => {
+    const promptText = textToSearch || inputValue || TYPEWRITER_PHRASES[phraseIndex];
+    setActivePrompt(promptText);
+    setShowSuggestions(true);
+
+    setTimeout(() => {
+      suggestionsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 100);
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    handleSearchSubmit();
+  };
+
+  const handlePrevSlide = () => {
+    setCurrentSlideIndex((prev) =>
+      prev === 0 ? CAROUSEL_SEDES.length - 1 : prev - 1
+    );
+  };
+
+  const handleNextSlide = () => {
+    setCurrentSlideIndex((prev) => (prev + 1) % CAROUSEL_SEDES.length);
+  };
+
+  // Función para obtener sugerencias según el prompt ingresado
+  const getRecommendedSpaces = (promptText: string) => {
+    const lower = promptText.toLowerCase();
+
+    if (
+      lower.includes("equipo") ||
+      lower.includes("reun") ||
+      lower.includes("sala") ||
+      lower.includes("conferencia")
+    ) {
+      return [
+        { sede: SEDES_DATABASE["parque-amistad"], space: SEDES_DATABASE["parque-amistad"].spaces[2] },
+        { sede: SEDES_DATABASE["surco-pueblo"], space: SEDES_DATABASE["surco-pueblo"].spaces[3] },
+        { sede: SEDES_DATABASE["castilla"], space: SEDES_DATABASE["castilla"].spaces[2] },
+      ];
+    }
+
+    if (
+      lower.includes("privad") ||
+      lower.includes("oficina") ||
+      lower.includes("cerrad")
+    ) {
+      return [
+        { sede: SEDES_DATABASE["parque-amistad"], space: SEDES_DATABASE["parque-amistad"].spaces[1] },
+        { sede: SEDES_DATABASE["surco-pueblo"], space: SEDES_DATABASE["surco-pueblo"].spaces[1] },
+        { sede: SEDES_DATABASE["castilla"], space: SEDES_DATABASE["castilla"].spaces[1] },
+      ];
+    }
+
+    return [
+      { sede: SEDES_DATABASE["parque-amistad"], space: SEDES_DATABASE["parque-amistad"].spaces[0] },
+      { sede: SEDES_DATABASE["castilla"], space: SEDES_DATABASE["castilla"].spaces[0] },
+      { sede: SEDES_DATABASE["surco-pueblo"], space: SEDES_DATABASE["surco-pueblo"].spaces[0] },
+    ];
+  };
+
+  const recommendedList = activePrompt ? getRecommendedSpaces(activePrompt) : [];
+
+  return (
+    <section className="relative min-h-screen w-full overflow-hidden bg-white/50 flex flex-col justify-between items-center text-center px-4 sm:px-6 lg:px-8 py-12 md:py-16">
+      {/* ========================================================
+          1. FONDO "MESH GRADIENT" INMERSIVO (ESTILO LOVABLE)
+         ======================================================== */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-10">
+        {/* Blob 1: Celeste Eléctrico Vívido */}
+        <div className="absolute top-[-10%] left-[-10%] w-[55vw] h-[55vw] rounded-full bg-sky-400/80 mix-blend-multiply filter blur-[90px] opacity-85 animate-blob" />
+
+        {/* Blob 2: Azul Rey / Índigo Intenso Vívido */}
+        <div className="absolute top-[15%] right-[-10%] w-[65vw] h-[65vw] rounded-full bg-blue-600/70 mix-blend-multiply filter blur-[100px] opacity-80 animate-blob animation-delay-2000" />
+
+        {/* Blob 3: Cian Brillante Vívido */}
+        <div className="absolute bottom-[-15%] left-[15%] w-[55vw] h-[55vw] rounded-full bg-cyan-400/75 mix-blend-multiply filter blur-[95px] opacity-85 animate-blob animation-delay-4000" />
+
+        {/* Blob 4: Índigo Azul Profundo Vívido */}
+        <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-indigo-600/65 mix-blend-multiply filter blur-[100px] opacity-80 animate-blob animation-delay-2000" />
+      </div>
+
+      {/* ========================================================
+          2. CAPA DE CONTENIDO CENTRAL (Z-INDEX 10)
+         ======================================================== */}
+      <div className="relative z-10 max-w-4xl mx-auto w-full my-auto flex flex-col items-center justify-center pt-4">
+        
         {/* Título Principal (h1) */}
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-gray-900 tracking-tight leading-[1.15]">
-          Tu espacio de trabajo ideal,{" "}
-          <span className="text-blue-600">cuando lo necesites.</span>
+        <h1 className="text-5xl md:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.1] mb-4 md:mb-6">
+          Encuentra tu espacio ideal
         </h1>
 
         {/* Subtítulo (p) */}
-        <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto font-normal leading-relaxed">
-          Reserva escritorios, salas de reuniones y oficinas privadas en las mejores ubicaciones de la ciudad.
+        <p className="text-slate-600 text-lg md:text-xl max-w-2xl mx-auto font-normal leading-relaxed mb-8 md:mb-10">
+          Crea, colabora y concéntrate en las mejores sedes de la ciudad.
         </p>
 
-        {/* Botón único CTA: Ver sedes disponibles */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-1">
-          <button
-            onClick={onVerSedes}
-            type="button"
-            className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 rounded-xl text-base font-semibold text-white bg-blue-600 hover:bg-blue-700 active:bg-blue-800 transition-all shadow-lg shadow-blue-600/30 hover:shadow-blue-600/40 transform hover:-translate-y-0.5 cursor-pointer"
+        {/* ========================================================
+            3. CAJA DE INTERACCIÓN PRINCIPAL (DISEÑO BÁSICO EN BLANCO PURO)
+           ======================================================== */}
+        <div className="w-full max-w-2xl mx-auto mb-8 md:mb-10">
+          <form
+            onSubmit={handleSubmit}
+            className={`relative flex items-center bg-white border ${
+              isFocused
+                ? "border-slate-400 ring-2 ring-slate-200"
+                : "border-slate-200"
+            } rounded-full p-2 md:p-3 shadow-[0_8px_30px_rgb(0,0,0,0.08)] hover:shadow-xl transition-all duration-300`}
           >
-            <span>Ver sedes disponibles</span>
-            <ArrowRight className="w-5 h-5 ml-2" />
-          </button>
-        </div>
+            <Sparkles className="w-5 h-5 md:w-6 md:h-6 text-slate-400 ml-3 md:ml-4 mr-2 shrink-0" />
 
-        {/* REEMPLAZO DE BENEFICIOS POR DEX RECOMENDADOR ABIERTO */}
-        <div className="pt-4 max-w-xl mx-auto">
-          <DexAssistant
-            variant="inline"
-            onSelectSede={onSelectSede}
-            onNavigateToSedes={(sedeId) => {
-              if (sedeId && onSelectSede) {
-                onSelectSede(sedeId);
-              } else if (onVerSedes) {
-                onVerSedes();
-              }
-            }}
-          />
+            <input
+              type="text"
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onFocus={() => setIsFocused(true)}
+              onBlur={() => setIsFocused(false)}
+              placeholder={inputValue ? "" : `${currentPlaceholder}|`}
+              className="w-full bg-transparent border-none text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-0 text-base md:text-lg font-medium px-2 py-2"
+            />
+
+            <button
+              type="submit"
+              aria-label="Enviar búsqueda"
+              className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-slate-900 hover:bg-slate-800 text-white flex items-center justify-center transition-all duration-200 shadow-md hover:scale-105 active:scale-95 shrink-0 ml-2 cursor-pointer"
+            >
+              <Send className="w-5 h-5 md:w-6 md:h-6 text-white transform -rotate-12 translate-x-[-1px]" />
+            </button>
+          </form>
         </div>
 
         {/* ========================================================
-            SECCIÓN VISUAL EXPLICATIVA DEL PROCESO EN 3 PASOS
+            PANEL DE RESULTADOS Y SUGERENCIAS RECOMENDADAS
            ======================================================== */}
-        <div className="pt-12 max-w-3xl mx-auto">
-          <h2 className="text-xs font-extrabold uppercase tracking-wider text-blue-600 mb-6">
-            ¿Cómo funciona reservaYA?
-          </h2>
+        {showSuggestions && activePrompt && (
+          <div
+            ref={suggestionsRef}
+            className="w-full max-w-3xl mx-auto mb-12 bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-sky-200 shadow-2xl text-left animate-fade-in space-y-6"
+          >
+            {/* Header del resultado con badge IA */}
+            <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
+              <div className="space-y-1">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-100">
+                  <Sparkles className="w-3.5 h-3.5 text-sky-500" />
+                  <span>Sugerencias para tu búsqueda</span>
+                </div>
+                <p className="text-sm md:text-base text-slate-700 font-medium pt-1">
+                  Basándonos en tu necesidad: <span className="font-bold text-slate-900 italic">"{activePrompt}"</span>, hemos encontrado estos espacios recomendados con sus mejores valoraciones:
+                </p>
+              </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {/* Paso 1 */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+              <button
+                onClick={() => setShowSuggestions(false)}
+                type="button"
+                className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-700 transition-colors cursor-pointer shrink-0"
+                aria-label="Cerrar sugerencias"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Cuadrícula de 3 Tarjetas Recomendadas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {recommendedList.map(({ sede, space }) => {
+                const topReview = space.reviews?.[0];
+                return (
+                  <div
+                    key={`${sede.id}-${space.id}`}
+                    className="bg-slate-50/80 hover:bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
+                  >
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
+                          <MapPin className="w-3 h-3" /> {sede.name}
+                        </span>
+                        <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
+                          <Star className="w-3.5 h-3.5 fill-amber-400" />
+                          <span>{space.rating}</span>
+                        </div>
+                      </div>
+
+                      <h4 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-blue-600 transition-colors">
+                        {space.name}
+                      </h4>
+
+                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                        {space.description}
+                      </p>
+
+                      {/* Comentario de reseña real */}
+                      {topReview && (
+                        <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600 italic">
+                          "{topReview.comment}"
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Botón para ver fotos y reseñas */}
+                    <div className="pt-2">
+                      <button
+                        onClick={() => setActiveModalData({ space, sede })}
+                        type="button"
+                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 hover:border-sky-300 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                      >
+                        <MessageSquare className="w-3.5 h-3.5 text-sky-600" />
+                        <span>Ver fotos y reseñas</span>
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Footer con opción de explorar todas las sedes */}
+            <div className="pt-2 flex items-center justify-between border-t border-slate-100 text-xs text-slate-500">
+              <button
+                onClick={() => {
+                  setInputValue("");
+                  setShowSuggestions(false);
+                }}
+                className="inline-flex items-center gap-1 text-slate-500 hover:text-slate-800 font-semibold cursor-pointer"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>Nueva búsqueda</span>
+              </button>
+
+              <button
+                onClick={onVerSedes}
+                className="inline-flex items-center gap-1 text-sky-600 hover:text-sky-800 font-bold cursor-pointer"
+              >
+                <span>Ver catálogo completo de sedes</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================
+            4. BOTÓN SECUNDARIO (EXPLORACIÓN MANUAL)
+           ======================================================== */}
+        <div className="flex flex-col items-center justify-center space-y-3 mb-12">
+          <p className="text-xs md:text-sm text-slate-500 font-medium">
+            O si prefieres explorar:
+          </p>
+
+          <button
+            onClick={onVerSedes}
+            type="button"
+            className="inline-flex items-center justify-center px-7 py-3.5 rounded-full text-sm md:text-base font-semibold text-slate-800 bg-white hover:bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all shadow-sm hover:shadow active:scale-95 cursor-pointer gap-2 group"
+          >
+            <span>Ver sedes disponibles</span>
+            <ArrowRight className="w-4 h-4 text-slate-600 group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+
+        {/* ========================================================
+            5. GUÍA BÁSICA EN 3 PASOS ("CÓMO FUNCIONA")
+           ======================================================== */}
+        <div className="w-full max-w-4xl mx-auto pt-8 border-t border-slate-200/60 mb-14">
+          <p className="text-xs font-extrabold uppercase tracking-wider text-sky-600 mb-6 text-center">
+            ¿Cómo funciona EspaciApp?
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 md:gap-6">
+            {/* Tarjeta 1: Escoge tu sede */}
+            <div 
+              onClick={onVerSedes}
+              className="group bg-white p-5 md:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md hover:border-sky-300 transition-all cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-800 flex items-center justify-center font-bold group-hover:bg-blue-900 group-hover:text-white transition-colors">
                 <Building2 className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-gray-900 text-sm">
+              <h3 className="font-bold text-slate-900 text-sm md:text-base">
                 1. Escoge tu sede
               </h3>
-              <p className="text-xs text-gray-500">
-                Selecciona la ubicación que mejor se adapte a ti y revisa su inventario.
+              <p className="text-xs md:text-sm text-slate-500 leading-relaxed">
+                Selecciona la ubicación que mejor se adapte a ti e inspecciona sus espacios.
               </p>
             </div>
 
-            {/* Paso 2 */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            {/* Tarjeta 2: Reserva el lugar */}
+            <div 
+              onClick={onVerSedes}
+              className="group bg-white p-5 md:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md hover:border-sky-300 transition-all cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold group-hover:bg-sky-400 group-hover:text-white transition-colors">
                 <Calendar className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-gray-900 text-sm">
-                2. Reserva tu espacio
+              <h3 className="font-bold text-slate-900 text-sm md:text-base">
+                2. Reserva el lugar
               </h3>
-              <p className="text-xs text-gray-500">
+              <p className="text-xs md:text-sm text-slate-500 leading-relaxed">
                 Elige el día, el tipo de oficina o sala y las horas que necesites.
               </p>
             </div>
 
-            {/* Paso 3 */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-200/80 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md transition-all">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            {/* Tarjeta 3: Paga y trabaja */}
+            <div 
+              onClick={onVerSedes}
+              className="group bg-white p-5 md:p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col items-center text-center space-y-3 hover:shadow-md hover:border-sky-300 transition-all cursor-pointer"
+            >
+              <div className="w-12 h-12 rounded-2xl bg-slate-100 text-slate-800 flex items-center justify-center font-bold group-hover:bg-slate-900 group-hover:text-white transition-colors">
                 <CreditCard className="w-6 h-6" />
               </div>
-              <h3 className="font-extrabold text-gray-900 text-sm">
-                3. Paga y asiste
+              <h3 className="font-bold text-slate-900 text-sm md:text-base">
+                3. Paga y trabaja
               </h3>
-              <p className="text-xs text-gray-500">
-                Paga vía Yape/Plin o en recepción y disfruta de tu jornada.
+              <p className="text-xs md:text-sm text-slate-500 leading-relaxed">
+                Paga de forma rápida en línea o en recepción y disfruta de tu jornada.
               </p>
             </div>
           </div>
         </div>
+
+        {/* ========================================================
+            6. SECCIÓN CARRUSEL HORIZONTAL AUTOMÁTICO & MANUAL
+               (EXPLORAR LUGARES DE COWORKING DE ESPACIAPP)
+           ======================================================== */}
+        <div 
+          className="w-full max-w-4xl mx-auto pt-8 border-t border-slate-200/60"
+          onMouseEnter={() => setIsCarouselPaused(true)}
+          onMouseLeave={() => setIsCarouselPaused(false)}
+        >
+          {/* Header del carrusel con Controles Manuales */}
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 text-left">
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wider text-sky-600 bg-sky-50 px-3 py-1 rounded-full border border-sky-100 inline-block mb-2">
+                Galería de Sedes & Espacios
+              </span>
+              <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                Conoce nuestras ubicaciones de Coworking
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500">
+                Pase automático continuo o navega manualmente con las flechas.
+              </p>
+            </div>
+
+            {/* Botones Manuales Izquierda / Derecha */}
+            <div className="flex items-center gap-2 shrink-0">
+              <button
+                onClick={handlePrevSlide}
+                type="button"
+                aria-label="Sede anterior"
+                className="w-10 h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+
+              <button
+                onClick={handleNextSlide}
+                type="button"
+                aria-label="Siguiente sede"
+                className="w-10 h-10 rounded-full bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 flex items-center justify-center shadow-sm hover:shadow transition-all active:scale-95 cursor-pointer"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+
+          {/* Carrusel Desplazable Horizontalmente */}
+          <div className="relative w-full overflow-hidden rounded-3xl border border-slate-200/80 shadow-xl bg-white">
+            <div
+              className="flex transition-transform duration-700 ease-out"
+              style={{ transform: `translateX(-${currentSlideIndex * 100}%)` }}
+            >
+              {CAROUSEL_SEDES.map((item) => (
+                <div
+                  key={item.id}
+                  className="w-full flex-shrink-0 p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-left"
+                >
+                  {/* Tarjeta Visual de Presentación (Sin usar imágenes externas) */}
+                  <div
+                    className={`w-full md:w-1/2 h-56 md:h-64 rounded-2xl bg-gradient-to-br ${item.bgGradient} p-6 text-white flex flex-col justify-between shadow-lg relative overflow-hidden group`}
+                  >
+                    {/* Elementos decorativos abstractos */}
+                    <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-white/10 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold border border-white/30 flex items-center gap-1">
+                      <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                      <span>{item.rating}</span>
+                    </div>
+
+                    <div className="space-y-1">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                        <Building2 className="w-6 h-6 text-white" />
+                      </div>
+                      <span className="text-xs font-semibold text-sky-100 block pt-2 uppercase tracking-wider">
+                        {item.tag}
+                      </span>
+                      <h3 className="text-xl md:text-2xl font-extrabold text-white leading-tight">
+                        {item.name}
+                      </h3>
+                    </div>
+
+                    <div className="text-xs text-white/90 font-medium flex items-center gap-1.5 pt-2">
+                      <MapPin className="w-3.5 h-3.5 shrink-0 text-sky-200" />
+                      <span className="truncate">{item.location}</span>
+                    </div>
+                  </div>
+
+                  {/* Detalles del Espacio y Servicios */}
+                  <div className="w-full md:w-1/2 space-y-4 flex flex-col justify-between">
+                    <div className="space-y-2">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                        <span>Inventario disponible</span>
+                      </div>
+
+                      <h4 className="text-lg font-extrabold text-slate-900">
+                        {item.name}
+                      </h4>
+
+                      <p className="text-xs md:text-sm text-slate-600 font-medium">
+                        {item.spacesCount}
+                      </p>
+                    </div>
+
+                    {/* Tags de características */}
+                    <div className="space-y-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">
+                        Comodidades destacadas:
+                      </span>
+                      <div className="flex flex-wrap gap-2">
+                        {item.features.map((feat, fIdx) => (
+                          <span
+                            key={fIdx}
+                            className="inline-flex items-center gap-1 px-3 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold border border-slate-200/80"
+                          >
+                            <ShieldCheck className="w-3.5 h-3.5 text-sky-600" />
+                            <span>{feat}</span>
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Botón Acción directo a esta sede */}
+                    <div className="pt-2">
+                      <button
+                        onClick={() => onSelectSede?.(item.id)}
+                        type="button"
+                        className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-slate-900 hover:bg-blue-600 text-white font-bold text-xs md:text-sm transition-all shadow-md active:scale-95 cursor-pointer"
+                      >
+                        <span>Explorar y reservar en esta sede</span>
+                        <ArrowRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Indicadores de Puntos (Dots) para control directo */}
+          <div className="flex items-center justify-center gap-2 mt-4">
+            {CAROUSEL_SEDES.map((_, dotIdx) => (
+              <button
+                key={dotIdx}
+                onClick={() => setCurrentSlideIndex(dotIdx)}
+                type="button"
+                aria-label={`Ir a la diapositiva ${dotIdx + 1}`}
+                className={`h-2.5 rounded-full transition-all cursor-pointer ${
+                  currentSlideIndex === dotIdx
+                    ? "w-8 bg-sky-500"
+                    : "w-2.5 bg-slate-300 hover:bg-slate-400"
+                }`}
+              />
+            ))}
+          </div>
+        </div>
+
       </div>
+
+      {/* Modal de Fotografías y Reseñas de los espacios recomendados */}
+      {activeModalData && (
+        <SpaceDetailModal
+          space={activeModalData.space}
+          sedeName={activeModalData.sede.name}
+          sedeId={activeModalData.sede.id}
+          isOpen={!!activeModalData}
+          onClose={() => setActiveModalData(null)}
+          onReserveSpace={(sedeId) => {
+            setActiveModalData(null);
+            if (onSelectSede) {
+              onSelectSede(sedeId);
+            }
+          }}
+        />
+      )}
     </section>
   );
 }
