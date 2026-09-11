@@ -50,6 +50,12 @@ const mockTimeSlotsBase: TimeSlotConfig[] = [
 interface FlujoReservaProps {
   sedeId?: string;
   onBack?: () => void;
+  onIrADatos?: (
+    day: number,
+    spaceId: string,
+    hourIds: string[],
+    hourLabels: string[]
+  ) => void;
   onIrAPagar?: (
     day: number,
     spaceId: string,
@@ -86,6 +92,7 @@ const STORAGE_KEY = "coworking-flujo-reserva";
 export default function FlujoReserva({
   sedeId = "parque-amistad",
   onBack,
+  onIrADatos,
   onIrAPagar,
 }: FlujoReservaProps) {
   const currentSede = SEDES_DATABASE[sedeId] || SEDES_DATABASE["parque-amistad"];
@@ -103,19 +110,30 @@ export default function FlujoReserva({
     }
   };
 
+  const [isMounted, setIsMounted] = useState(false);
+
   // Paso A: Día seleccionado
-  const [selectedDay, setSelectedDay] = useState<number | null>(() => getStoredReserva().selectedDay);
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
 
   // Paso B: Espacio seleccionado
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(() => getStoredReserva().selectedSpaceId);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
 
   // Paso C: Horas seleccionadas (Array)
-  const [horasSeleccionadas, setHorasSeleccionadas] = useState<string[]>(() => getStoredReserva().horasSeleccionadas);
+  const [horasSeleccionadas, setHorasSeleccionadas] = useState<string[]>([]);
 
   // Estado para abrir modal de fotos y reseñas
   const [spaceModalCategory, setSpaceModalCategory] = useState<SpaceCategory | null>(null);
 
   useEffect(() => {
+    setIsMounted(true);
+    const stored = getStoredReserva();
+    if (stored.selectedDay !== undefined && stored.selectedDay !== null) setSelectedDay(stored.selectedDay);
+    if (stored.selectedSpaceId) setSelectedSpaceId(stored.selectedSpaceId);
+    if (stored.horasSeleccionadas) setHorasSeleccionadas(stored.horasSeleccionadas);
+  }, []);
+
+  useEffect(() => {
+    if (!isMounted) return;
     try {
       window.localStorage.setItem(
         STORAGE_KEY,
@@ -124,7 +142,7 @@ export default function FlujoReserva({
     } catch {
       // Ignorar si no se puede guardar en localStorage
     }
-  }, [selectedDay, selectedSpaceId, horasSeleccionadas]);
+  }, [isMounted, selectedDay, selectedSpaceId, horasSeleccionadas]);
 
   const weekDays = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
   const daysInSeptember = Array.from({ length: 30 }, (_, i) => i + 1);
@@ -176,12 +194,16 @@ export default function FlujoReserva({
   const handleProceedToPayment = () => {
     if (!selectedDay || !selectedSpaceId || horasSeleccionadas.length === 0)
       return;
-    onIrAPagar?.(
-      selectedDay,
-      selectedSpaceId,
-      horasSeleccionadas,
-      selectedLabels
-    );
+    if (onIrADatos) {
+      onIrADatos(selectedDay, selectedSpaceId, horasSeleccionadas, selectedLabels);
+    } else {
+      onIrAPagar?.(
+        selectedDay,
+        selectedSpaceId,
+        horasSeleccionadas,
+        selectedLabels
+      );
+    }
   };
 
   return (
@@ -594,7 +616,7 @@ export default function FlujoReserva({
                     type="button"
                     className="w-full py-3.5 px-4 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-extrabold text-sm transition-all shadow-md flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span>Ir al Paso de Pago</span>
+                    <span>Continuar a Tus Datos</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>

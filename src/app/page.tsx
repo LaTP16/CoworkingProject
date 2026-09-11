@@ -3,16 +3,17 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Hero from "@/components/Hero";
-import Stepper from "@/components/Stepper";
+import Stepper, { StepId } from "@/components/Stepper";
 import SedesSection from "@/components/SedesSection";
 import FlujoReserva from "@/components/FlujoReserva";
+import FormularioDatos, { ClientData } from "@/components/FormularioDatos";
 import PantallaPago from "@/components/PantallaPago";
 import DexAssistant from "@/components/DexAssistant";
 import Footer from "@/components/Footer";
 
 const STORAGE_KEY = "coworking-reserva-state";
 
-type VistaActual = "inicio" | "sedes" | "reserva" | "pago";
+type VistaActual = "inicio" | "sedes" | "reserva" | "datos" | "pago";
 
 interface PersistedReservationState {
   vistaActual: VistaActual;
@@ -21,6 +22,7 @@ interface PersistedReservationState {
   selectedSpaceId: string | null;
   selectedHourIds: string[];
   selectedHourLabels: string[];
+  clientData: ClientData | null;
 }
 
 const getStoredState = (): Partial<PersistedReservationState> => {
@@ -37,35 +39,38 @@ const getStoredState = (): Partial<PersistedReservationState> => {
 };
 
 export default function Home() {
-  // Control de vistas: 'inicio' | 'sedes' | 'reserva' | 'pago'
-  const [vistaActual, setVistaActual] = useState<VistaActual>(() => {
-    const stored = getStoredState();
-    return stored.vistaActual ?? "inicio";
-  });
+  const [isMounted, setIsMounted] = useState(false);
+
+  // Control de vistas
+  const [vistaActual, setVistaActual] = useState<VistaActual>("inicio");
 
   // Estados del proceso de reserva
-  const [sedeSeleccionadaId, setSedeSeleccionadaId] = useState<string>(() => {
-    const stored = getStoredState();
-    return stored.sedeSeleccionadaId ?? "parque-amistad";
-  });
-  const [selectedDay, setSelectedDay] = useState<number | null>(() => {
-    const stored = getStoredState();
-    return stored.selectedDay ?? null;
-  });
-  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(() => {
-    const stored = getStoredState();
-    return stored.selectedSpaceId ?? null;
-  });
-  const [selectedHourIds, setSelectedHourIds] = useState<string[]>(() => {
-    const stored = getStoredState();
-    return stored.selectedHourIds ?? [];
-  });
-  const [selectedHourLabels, setSelectedHourLabels] = useState<string[]>(() => {
-    const stored = getStoredState();
-    return stored.selectedHourLabels ?? [];
-  });
+  const [sedeSeleccionadaId, setSedeSeleccionadaId] = useState<string>("parque-amistad");
+  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [selectedSpaceId, setSelectedSpaceId] = useState<string | null>(null);
+  const [selectedHourIds, setSelectedHourIds] = useState<string[]>([]);
+  const [selectedHourLabels, setSelectedHourLabels] = useState<string[]>([]);
 
+  // Estado de Datos Personales del Cliente
+  const [clientData, setClientData] = useState<ClientData | null>(null);
+
+  // Carga inicial de localStorage tras montar para prevenir Hydration Mismatch
   useEffect(() => {
+    setIsMounted(true);
+    const stored = getStoredState();
+    if (stored.vistaActual) setVistaActual(stored.vistaActual);
+    if (stored.sedeSeleccionadaId) setSedeSeleccionadaId(stored.sedeSeleccionadaId);
+    if (stored.selectedDay !== undefined) setSelectedDay(stored.selectedDay ?? null);
+    if (stored.selectedSpaceId) setSelectedSpaceId(stored.selectedSpaceId);
+    if (stored.selectedHourIds) setSelectedHourIds(stored.selectedHourIds);
+    if (stored.selectedHourLabels) setSelectedHourLabels(stored.selectedHourLabels);
+    if (stored.clientData) setClientData(stored.clientData);
+  }, []);
+
+  // Guardar en localStorage solo después de montar
+  useEffect(() => {
+    if (!isMounted) return;
+
     const stateToStore: PersistedReservationState = {
       vistaActual,
       sedeSeleccionadaId,
@@ -73,20 +78,23 @@ export default function Home() {
       selectedSpaceId,
       selectedHourIds,
       selectedHourLabels,
+      clientData,
     };
 
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToStore));
     } catch {
-      // Ignorar si no se puede guardar en localStorage
+      // Ignorar errores de localStorage
     }
   }, [
+    isMounted,
     vistaActual,
     sedeSeleccionadaId,
     selectedDay,
     selectedSpaceId,
     selectedHourIds,
     selectedHourLabels,
+    clientData,
   ]);
 
   // Handlers para navegación
@@ -101,7 +109,7 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleIrAPagar = (
+  const handleIrADatos = (
     day: number,
     spaceId: string,
     hourIds: string[],
@@ -111,6 +119,12 @@ export default function Home() {
     setSelectedSpaceId(spaceId);
     setSelectedHourIds(hourIds);
     setSelectedHourLabels(hourLabels);
+    setVistaActual("datos");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleIrAPagar = (data: ClientData) => {
+    setClientData(data);
     setVistaActual("pago");
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -127,6 +141,16 @@ export default function Home() {
 
   const handleVolverAReserva = () => {
     setVistaActual("reserva");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleVolverADatos = () => {
+    setVistaActual("datos");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleStepClick = (stepId: StepId) => {
+    setVistaActual(stepId);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -151,11 +175,13 @@ export default function Home() {
 
       <Navbar />
 
-      {/* Indicador de Progreso (Stepper) presente en Sedes, Reserva y Pago */}
-      {vistaActual !== "inicio" && <Stepper currentStep={vistaActual} />}
+      {/* Indicador de Progreso (Stepper interactivo) presente en Sedes, Reserva, Datos y Pago */}
+      {vistaActual !== "inicio" && (
+        <Stepper currentStep={vistaActual} onStepClick={handleStepClick} />
+      )}
 
       <main className="flex-grow relative z-10">
-        {/* PANTALLA 1: INICIO (Hero + Explicación del proceso en 3 pasos) */}
+        {/* PANTALLA 1: INICIO (Hero + Explicación del proceso) */}
         {vistaActual === "inicio" && (
           <Hero
             onVerSedes={handleIrASedes}
@@ -176,26 +202,44 @@ export default function Home() {
           <FlujoReserva
             sedeId={sedeSeleccionadaId}
             onBack={handleVolverASedes}
-            onIrAPagar={handleIrAPagar}
+            onIrADatos={handleIrADatos}
+            onIrAPagar={(day, spaceId, hourIds, hourLabels) => {
+              handleIrADatos(day, spaceId, hourIds, hourLabels);
+            }}
           />
         )}
 
-        {/* PANTALLA 4: PAGO (Paso 3: Paga) */}
+        {/* PANTALLA 4: TUS DATOS (Paso 3: Tus Datos) */}
+        {vistaActual === "datos" && (
+          <FormularioDatos
+            sedeId={sedeSeleccionadaId}
+            day={selectedDay || 15}
+            spaceId={selectedSpaceId || "individuales"}
+            selectedHoursCount={selectedHourIds.length || 2}
+            selectedHourLabels={selectedHourLabels.length ? selectedHourLabels : ["09:00 - 10:00", "10:00 - 11:00"]}
+            initialData={clientData || undefined}
+            onBack={handleVolverAReserva}
+            onContinuarAPagar={handleIrAPagar}
+          />
+        )}
+
+        {/* PANTALLA 5: PAGO (Paso 4: Paga) */}
         {vistaActual === "pago" && (
           <PantallaPago
             sedeId={sedeSeleccionadaId}
-            day={selectedDay}
-            spaceId={selectedSpaceId}
-            selectedHoursCount={selectedHourIds.length}
-            selectedHourLabels={selectedHourLabels}
-            onBack={handleVolverAReserva}
+            day={selectedDay || 15}
+            spaceId={selectedSpaceId || "individuales"}
+            selectedHoursCount={selectedHourIds.length || 2}
+            selectedHourLabels={selectedHourLabels.length ? selectedHourLabels : ["09:00 - 10:00", "10:00 - 11:00"]}
+            clientData={clientData}
+            onBack={handleVolverADatos}
           />
         )}
       </main>
 
       <Footer />
 
-      {/* Asistente Virtual Global Dex (Flotante en sedes, reserva y pago) */}
+      {/* Asistente Virtual Global Dex (Flotante en sedes, reserva, datos y pago) */}
       {vistaActual !== "inicio" && (
         <DexAssistant
           onSelectSede={handleSeleccionarSede}
