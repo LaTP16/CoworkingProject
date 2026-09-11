@@ -9,6 +9,15 @@ export interface SpaceReview {
   comment: string;
 }
 
+export interface SpaceSubOption {
+  id: string;
+  name: string;
+  count: number;
+  capacityLabel: string;
+  description: string;
+  pricePerHour?: number;
+}
+
 export interface SpaceCategory {
   id: string;
   name: string;
@@ -19,6 +28,8 @@ export interface SpaceCategory {
   reviewsCount: number;
   images: string[];
   reviews: SpaceReview[];
+  subOptions?: SpaceSubOption[];
+  pricePerHour?: number;
 }
 
 export interface SedeInfo {
@@ -44,6 +55,7 @@ export const SEDES_DATABASE: Record<string, SedeInfo> = {
         id: "individuales",
         name: "Espacios individuales",
         count: 54,
+        pricePerHour: 8,
         iconName: "user",
         description: "Escritorios flex y hot desking con iluminación ergonómica",
         rating: 4.9,
@@ -86,6 +98,7 @@ export const SEDES_DATABASE: Record<string, SedeInfo> = {
         id: "privados",
         name: "Espacios privados",
         count: 6,
+        pricePerHour: 20,
         iconName: "lock",
         description: "Oficinas privadas e insonorizadas para máximo enfoque",
         rating: 4.95,
@@ -93,6 +106,24 @@ export const SEDES_DATABASE: Record<string, SedeInfo> = {
         images: [
           "/images/spaces/privados.jpg",
           "/images/sedes/parque-amistad.jpg",
+        ],
+        subOptions: [
+          {
+            id: "privados-1-2",
+            name: "Espacio privado (Aforo 1 a 2 p.)",
+            count: 3,
+            pricePerHour: 20,
+            capacityLabel: "Aforo: 1 a 2 personas",
+            description: "Oficina privada e insonorizada ideal para 1 a 2 personas (3 espacios disponibles)",
+          },
+          {
+            id: "privados-3",
+            name: "Espacio privado (Aforo 3 p.)",
+            count: 3,
+            pricePerHour: 30,
+            capacityLabel: "Aforo: 3 personas",
+            description: "Oficina ejecutiva privada e insonorizada para 3 personas (3 espacios disponibles)",
+          },
         ],
         reviews: [
           {
@@ -119,6 +150,7 @@ export const SEDES_DATABASE: Record<string, SedeInfo> = {
         id: "trabajo",
         name: "Salas de trabajo",
         count: 4,
+        pricePerHour: 60,
         iconName: "users",
         description: "Salas ideales para trabajo de equipo y talleres",
         rating: 4.85,
@@ -126,6 +158,32 @@ export const SEDES_DATABASE: Record<string, SedeInfo> = {
         images: [
           "/images/spaces/trabajo.jpg",
           "/images/sedes/parque-amistad.jpg",
+        ],
+        subOptions: [
+          {
+            id: "trabajo-6",
+            name: "Sala de trabajo (Aforo 6 personas)",
+            count: 1,
+            pricePerHour: 60,
+            capacityLabel: "Aforo: 6 personas",
+            description: "Sala de trabajo colaborativo insonorizada para 6 personas (1 espacio disponible)",
+          },
+          {
+            id: "trabajo-8",
+            name: "Sala de trabajo (Aforo 8 personas)",
+            count: 1,
+            pricePerHour: 80,
+            capacityLabel: "Aforo: 8 personas",
+            description: "Sala amplia para equipos con pantalla interactiva para 8 personas (1 espacio disponible)",
+          },
+          {
+            id: "trabajo-15",
+            name: "Sala de trabajo (Aforo 15 personas)",
+            count: 2,
+            pricePerHour: 160,
+            capacityLabel: "Aforo: 15 personas",
+            description: "Sala ejecutiva para talleres y reuniones de equipos grandes de 15 personas (2 espacios disponibles)",
+          },
         ],
         reviews: [
           {
@@ -152,6 +210,7 @@ export const SEDES_DATABASE: Record<string, SedeInfo> = {
         id: "conferencias",
         name: "Sala de conferencias",
         count: 1,
+        pricePerHour: 360,
         iconName: "presentation",
         description: "Gran espacio equipado con podio y proyector para 40 personas",
         rating: 5.0,
@@ -394,3 +453,32 @@ export const SEDES_DATABASE: Record<string, SedeInfo> = {
     ],
   },
 };
+
+export function findSpaceById(
+  sede: SedeInfo,
+  spaceId: string | null
+): { name: string; count: number; description?: string; pricePerHour: number } | null {
+  if (!spaceId) return null;
+  for (const space of sede.spaces) {
+    if (space.id === spaceId) {
+      return {
+        name: space.name,
+        count: space.count,
+        description: space.description,
+        pricePerHour: space.pricePerHour ?? 15,
+      };
+    }
+    if (space.subOptions) {
+      const sub = space.subOptions.find((s) => s.id === spaceId);
+      if (sub) {
+        return {
+          name: sub.name,
+          count: sub.count,
+          description: sub.description,
+          pricePerHour: sub.pricePerHour ?? space.pricePerHour ?? 15,
+        };
+      }
+    }
+  }
+  return null;
+}

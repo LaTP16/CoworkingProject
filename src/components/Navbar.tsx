@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X, Building2 } from "lucide-react";
+import { Menu, X } from "lucide-react";
 
 interface NavbarProps {
   onNavigateHome?: () => void;
@@ -21,15 +21,17 @@ export default function Navbar({ onNavigateHome }: NavbarProps) {
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo tipográfico EspaciApp — botón que lleva al inicio */}
+          {/* Logo principal EspaciApp — botón que lleva al inicio */}
           <button
             onClick={handleGoHome}
-            className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-1 -m-1 transition-opacity hover:opacity-80"
+            className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-1 -m-1 transition-opacity hover:opacity-80 group"
             aria-label="Ir al inicio"
           >
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
-              <Building2 className="w-5 h-5" />
-            </div>
+            <img
+              src="/images/logo.png"
+              alt="EspaciApp Logo"
+              className="w-10 h-10 object-contain drop-shadow-sm transition-transform group-hover:scale-105"
+            />
             <span className="text-2xl font-extrabold tracking-tight text-gray-900">
               Espaci<span className="text-blue-600">App</span>
             </span>

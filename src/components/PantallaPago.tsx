@@ -18,7 +18,7 @@ import {
   CreditCard,
   Hash,
 } from "lucide-react";
-import { SEDES_DATABASE } from "@/data/sedesData";
+import { SEDES_DATABASE, findSpaceById } from "@/data/sedesData";
 import { ClientData } from "@/components/FormularioDatos";
 
 interface PantallaPagoProps {
@@ -43,7 +43,9 @@ export default function PantallaPago({
   onBack,
 }: PantallaPagoProps) {
   const currentSede = SEDES_DATABASE[sedeId] || SEDES_DATABASE["parque-amistad"];
-  const activeSpaceCategory = currentSede.spaces.find((s) => s.id === spaceId);
+  const activeSpaceCategory = findSpaceById(currentSede, spaceId);
+  const pricePerHour = activeSpaceCategory?.pricePerHour || 15;
+  const totalPrice = selectedHoursCount * pricePerHour;
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -102,9 +104,6 @@ export default function PantallaPago({
   }, [isMounted, paymentMethod, voucherCode, isCompleted]);
 
   const fileInputIdYape = useId();
-
-  const pricePerHour = 15; // $15 por hora
-  const totalPrice = selectedHoursCount * pricePerHour;
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(operationCode);
@@ -208,7 +207,7 @@ export default function PantallaPago({
 
               <div className="flex justify-between pt-1 font-bold text-base text-gray-900">
                 <span>Monto Total Abonado:</span>
-                <span className="text-emerald-600">${totalPrice}.00</span>
+                <span className="text-emerald-600">S/ {totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
@@ -292,7 +291,7 @@ export default function PantallaPago({
 
                 <div className="pt-4 border-t border-gray-100 flex justify-between items-center text-base font-extrabold">
                   <span className="text-gray-900">Monto Total a Pagar:</span>
-                  <span className="text-2xl text-blue-600">${totalPrice}.00</span>
+                  <span className="text-2xl text-blue-600">S/ {totalPrice.toFixed(2)}</span>
                 </div>
               </div>
             </div>

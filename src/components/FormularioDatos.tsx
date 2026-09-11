@@ -15,7 +15,7 @@ import {
   CheckCircle2,
   ShieldCheck,
 } from "lucide-react";
-import { SEDES_DATABASE } from "@/data/sedesData";
+import { SEDES_DATABASE, findSpaceById } from "@/data/sedesData";
 
 export interface ClientData {
   nombres: string;
@@ -49,7 +49,7 @@ export default function FormularioDatos({
   onContinuarAPagar,
 }: FormularioDatosProps) {
   const currentSede = SEDES_DATABASE[sedeId] || SEDES_DATABASE["parque-amistad"];
-  const activeSpaceCategory = currentSede.spaces.find((s) => s.id === spaceId);
+  const activeSpaceCategory = findSpaceById(currentSede, spaceId);
 
   const getStoredDatos = (): ClientData => {
     if (initialData && initialData.nombres) return initialData;
@@ -392,7 +392,7 @@ export default function FormularioDatos({
             <div className="pt-3 border-t border-blue-100 flex items-center justify-between">
               <span className="text-xs font-bold text-gray-600">Total a Pagar:</span>
               <span className="text-2xl font-extrabold text-blue-600">
-                ${totalPrice}.00
+                S/ {((activeSpaceCategory?.pricePerHour || 15) * selectedHoursCount).toFixed(2)}
               </span>
             </div>
           </div>

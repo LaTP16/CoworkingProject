@@ -411,15 +411,20 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
           </button>
         </div>
 
-        {/* Banner promocional — Descuento vecinos surcanos */}
-        <div className="w-full max-w-2xl mx-auto mb-10 flex items-center justify-center px-4">
-          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 border border-sky-200/70 shadow-xs hover:shadow-sm transition-all duration-300">
-            <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 text-white shadow-xs shrink-0">
-              <Sparkles className="w-3.5 h-3.5" />
+        {/* Banner promocional — Descuento vecinos surcanos en recuadro ovalado dorado claro */}
+        <div className="w-full max-w-3xl mx-auto mb-10 px-4 flex justify-center">
+          <div
+            style={{
+              background: "linear-gradient(90deg, #e5b95c 0%, #f7d98c 22%, #fff9d4 50%, #f7d98c 78%, #e5b95c 100%)",
+            }}
+            className="border-2 border-[#dfb04e] rounded-full px-6 py-3 sm:px-8 sm:py-3.5 shadow-md flex items-center justify-center gap-3 text-[#382407]"
+          >
+            <span className="flex items-center justify-center w-8 h-8 rounded-full bg-black/10 text-[#382407] shrink-0 font-bold">
+              <Sparkles className="w-4 h-4 fill-[#7e5513] text-[#382407]" />
             </span>
-            <p className="text-xs sm:text-sm md:text-base font-medium text-slate-700 leading-snug text-center">
-              Si eres un <span className="font-bold text-sky-800">vecino surcano</span> obtienes un{" "}
-              <span className="font-bold text-sky-800">50% de descuento</span> en todas tus reservas.
+            <p className="text-xs sm:text-sm md:text-base font-semibold leading-snug text-center text-[#382407]">
+              Si eres un <span className="font-extrabold underline decoration-[#7e5513] underline-offset-2">vecino surcano</span> obtienes un{" "}
+              <span className="font-extrabold bg-white/90 text-[#382407] px-2.5 py-0.5 rounded-full border border-[#dfb04e]/60 shadow-xs">50% de descuento</span> en todas tus reservas.
             </p>
           </div>
         </div>

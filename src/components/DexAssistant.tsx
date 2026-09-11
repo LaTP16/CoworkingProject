@@ -55,7 +55,7 @@ const faqData: FAQItem[] = [
     topic: "Tarifas y Descuentos",
     question: "¿Cuáles son las tarifas y hay descuento para vecinos de Surco?",
     answer:
-      "Nuestras tarifas van desde $15/hr para escritorios individuales. ¡Sí! Si eres vecino de Surco, obtienes un 20% de descuento automático presentando tu DNI o recibo en recepción.",
+      "Nuestras tarifas van desde S/ 8.00/hr para escritorios individuales. ¡Sí! Si eres vecino de Surco, obtienes un 50% de descuento automático en tu reserva.",
   },
   {
     id: "proceso",
