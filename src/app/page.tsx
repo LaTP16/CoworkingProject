@@ -173,7 +173,7 @@ export default function Home() {
         <div className="absolute bottom-[-10%] right-[-5%] w-[45vw] h-[45vw] rounded-full bg-indigo-600/65 mix-blend-multiply filter blur-[100px] opacity-80 animate-blob animation-delay-2000" />
       </div>
 
-      <Navbar />
+      <Navbar onNavigateHome={handleVolverAInicio} />
 
       {/* Indicador de Progreso (Stepper interactivo) presente en Sedes, Reserva, Datos y Pago */}
       {vistaActual !== "inicio" && (

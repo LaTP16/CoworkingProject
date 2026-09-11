@@ -396,7 +396,7 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
         {/* ========================================================
             4. BOTÓN SECUNDARIO (EXPLORACIÓN MANUAL)
            ======================================================== */}
-        <div className="flex flex-col items-center justify-center space-y-3 mb-12">
+        <div className="flex flex-col items-center justify-center space-y-3 mb-5">
           <p className="text-xs md:text-sm text-slate-500 font-medium">
             O si prefieres explorar:
           </p>
@@ -409,6 +409,19 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
             <span>Ver sedes disponibles</span>
             <ArrowRight className="w-4 h-4 text-slate-600 group-hover:translate-x-1 transition-transform" />
           </button>
+        </div>
+
+        {/* Banner promocional — Descuento vecinos surcanos */}
+        <div className="w-full max-w-2xl mx-auto mb-10 flex items-center justify-center px-4">
+          <div className="inline-flex items-center gap-2.5 px-5 py-2.5 sm:px-6 sm:py-3 rounded-full bg-gradient-to-r from-sky-50 via-blue-50 to-indigo-50 border border-sky-200/70 shadow-xs hover:shadow-sm transition-all duration-300">
+            <span className="flex items-center justify-center w-6 h-6 sm:w-7 sm:h-7 rounded-full bg-gradient-to-tr from-sky-500 to-blue-600 text-white shadow-xs shrink-0">
+              <Sparkles className="w-3.5 h-3.5" />
+            </span>
+            <p className="text-xs sm:text-sm md:text-base font-medium text-slate-700 leading-snug text-center">
+              Si eres un <span className="font-bold text-sky-800">vecino surcano</span> obtienes un{" "}
+              <span className="font-bold text-sky-800">50% de descuento</span> en todas tus reservas.
+            </p>
+          </div>
         </div>
 
         {/* ========================================================

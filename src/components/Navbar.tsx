@@ -3,39 +3,58 @@
 import { useState } from "react";
 import { Menu, X, Building2 } from "lucide-react";
 
-export default function Navbar() {
+interface NavbarProps {
+  onNavigateHome?: () => void;
+}
+
+export default function Navbar({ onNavigateHome }: NavbarProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  const handleGoHome = () => {
+    if (onNavigateHome) {
+      onNavigateHome();
+    }
+    setIsOpen(false);
+  };
 
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
-          {/* Logo tipográfico EspaciApp */}
-          <div className="flex items-center gap-2.5">
+          {/* Logo tipográfico EspaciApp — botón que lleva al inicio */}
+          <button
+            onClick={handleGoHome}
+            className="flex items-center gap-2.5 cursor-pointer bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-1 -m-1 transition-opacity hover:opacity-80"
+            aria-label="Ir al inicio"
+          >
             <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center text-white shadow-md shadow-blue-500/25">
               <Building2 className="w-5 h-5" />
             </div>
-            <a href="#" className="text-2xl font-extrabold tracking-tight text-gray-900">
+            <span className="text-2xl font-extrabold tracking-tight text-gray-900">
               Espaci<span className="text-blue-600">App</span>
-            </a>
-          </div>
+            </span>
+          </button>
 
           {/* Enlaces de navegación en escritorio */}
           <nav className="hidden sm:flex items-center space-x-8">
-            <a
-              href="#inicio"
-              className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+            <button
+              onClick={handleGoHome}
+              className="text-sm font-semibold text-gray-900 hover:text-blue-600 transition-colors bg-transparent border-none cursor-pointer"
             >
               Inicio
-            </a>
+            </button>
             <a
-              href="#sedes"
+              href="https://www.munisurco.gob.pe/coworking/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
             >
               Sedes
             </a>
             <a
-              href="#contacto"
+              href="https://api.whatsapp.com/send?phone=51992745611"
+              target="_blank"
+              rel="noopener noreferrer"
               className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
             >
               Contacto
@@ -59,22 +78,25 @@ export default function Navbar() {
       {/* Menú desplegable móvil */}
       {isOpen && (
         <div className="sm:hidden bg-white border-b border-gray-100 px-4 pt-2 pb-6 space-y-3 shadow-lg">
-          <a
-            href="#inicio"
-            onClick={() => setIsOpen(false)}
-            className="block px-3 py-2 rounded-lg text-base font-semibold text-gray-900 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+          <button
+            onClick={handleGoHome}
+            className="block w-full text-left px-3 py-2 rounded-lg text-base font-semibold text-gray-900 bg-gray-50 hover:bg-blue-50 hover:text-blue-600 transition-colors border-none cursor-pointer"
           >
             Inicio
-          </a>
+          </button>
           <a
-            href="#sedes"
+            href="https://www.munisurco.gob.pe/coworking/"
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => setIsOpen(false)}
             className="block px-3 py-2 rounded-lg text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors"
           >
             Sedes
           </a>
           <a
-            href="#contacto"
+            href="https://api.whatsapp.com/send?phone=51992745611"
+            target="_blank"
+            rel="noopener noreferrer"
             onClick={() => setIsOpen(false)}
             className="block px-3 py-2 rounded-lg text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors"
           >
