@@ -45,7 +45,10 @@ export default function PantallaPago({
   const currentSede = SEDES_DATABASE[sedeId] || SEDES_DATABASE["parque-amistad"];
   const activeSpaceCategory = findSpaceById(currentSede, spaceId);
   const pricePerHour = activeSpaceCategory?.pricePerHour || 15;
-  const totalPrice = selectedHoursCount * pricePerHour;
+  const subtotal = selectedHoursCount * pricePerHour;
+  const isVecinoSurcano = clientData?.isVecinoSurcano || clientData?.dni === "75174517";
+  const discount = isVecinoSurcano ? subtotal * 0.5 : 0;
+  const totalPrice = subtotal - discount;
 
   const [isMounted, setIsMounted] = useState(false);
 
@@ -123,6 +126,7 @@ export default function PantallaPago({
     dni: "12345678",
     celular: "987654321",
     correo: "usuario@ejemplo.com",
+    isVecinoSurcano: false,
   };
 
   return (
@@ -165,7 +169,14 @@ export default function PantallaPago({
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500 font-medium">DNI / Identificación:</span>
-                <span className="font-bold text-gray-800">{defaultClient.dni}</span>
+                <span className="font-bold text-gray-800">
+                  {defaultClient.dni}
+                  {isVecinoSurcano && (
+                    <span className="ml-2 text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold">
+                      ✓ Vecino Surcano (50% Desc.)
+                    </span>
+                  )}
+                </span>
               </div>
               <div className="flex justify-between border-b pb-2">
                 <span className="text-gray-500 font-medium">Celular de Contacto:</span>
@@ -204,6 +215,13 @@ export default function PantallaPago({
                   Sept. {day}, 2026 — {activeSpaceCategory?.name}
                 </span>
               </div>
+
+              {isVecinoSurcano && (
+                <div className="flex justify-between border-b pb-2 text-emerald-700 font-semibold">
+                  <span>Descuento Vecino Surcano (50%):</span>
+                  <span>-S/ {discount.toFixed(2)}</span>
+                </div>
+              )}
 
               <div className="flex justify-between pt-1 font-bold text-base text-gray-900">
                 <span>Monto Total Abonado:</span>
@@ -246,6 +264,11 @@ export default function PantallaPago({
                   <p className="flex items-center gap-1.5 text-gray-600">
                     <CreditCard className="w-3 h-3 text-gray-400" />
                     <span>DNI: {defaultClient.dni}</span>
+                    {isVecinoSurcano && (
+                      <span className="text-[10px] bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded-full font-bold ml-1">
+                        Vecino Surcano (50% Off)
+                      </span>
+                    )}
                   </p>
                   <p className="flex items-center gap-1.5 text-gray-600">
                     <Phone className="w-3 h-3 text-gray-400" />
@@ -288,6 +311,13 @@ export default function PantallaPago({
                     ))}
                   </div>
                 </div>
+
+                {isVecinoSurcano && (
+                  <div className="flex justify-between items-center text-xs text-emerald-700 font-bold bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                    <span>Descuento Vecino Surcano (50%):</span>
+                    <span>-S/ {discount.toFixed(2)}</span>
+                  </div>
+                )}
 
                 <div className="pt-4 border-t border-gray-100 flex justify-between items-center text-base font-extrabold">
                   <span className="text-gray-900">Monto Total a Pagar:</span>
@@ -369,7 +399,7 @@ export default function PantallaPago({
                         Monto exacto a pagar:
                       </p>
                       <p className="text-3xl font-black text-purple-700">
-                        ${totalPrice}.00
+                        S/ {totalPrice.toFixed(2)}
                       </p>
                     </div>
                   </div>
@@ -452,7 +482,7 @@ export default function PantallaPago({
                     }`}
                   >
                     <Sparkles className="w-5 h-5" />
-                    <span>Confirmar y Enviar Reserva (${totalPrice}.00)</span>
+                    <span>Confirmar y Enviar Reserva (S/ {totalPrice.toFixed(2)})</span>
                   </button>
                 </form>
               )}

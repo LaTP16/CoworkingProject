@@ -23,6 +23,7 @@ export interface ClientData {
   dni: string;
   celular: string;
   correo: string;
+  isVecinoSurcano?: boolean;
 }
 
 interface FormularioDatosProps {
@@ -73,14 +74,25 @@ export default function FormularioDatos({
     dni: "",
     celular: "",
     correo: "",
+    isVecinoSurcano: false,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof ClientData, string>>>({});
+  const [validationStatus, setValidationStatus] = useState<{
+    text: string;
+    isSuccess: boolean;
+  } | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
     const stored = getStoredDatos();
     if (stored && (stored.nombres || stored.correo)) {
       setFormData(stored);
+      if (stored.dni === "75174517" || stored.isVecinoSurcano) {
+        setValidationStatus({
+          text: "¡Felicidades! DNI validado como Vecino Surcano. Se aplicó un 50% de descuento automático.",
+          isSuccess: true,
+        });
+      }
     }
   }, []);
 
@@ -95,10 +107,42 @@ export default function FormularioDatos({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData((prev) => {
+      const next = { ...prev, [name]: value };
+      if (name === "dni") {
+        next.isVecinoSurcano = false;
+      }
+      return next;
+    });
+
+    if (name === "dni") {
+      setValidationStatus(null);
+    }
 
     if (errors[name as keyof ClientData]) {
       setErrors((prev) => ({ ...prev, [name]: undefined }));
+    }
+  };
+
+  const handleValidarVecinoSurcano = () => {
+    const cleanDni = formData.dni.trim();
+    if (!cleanDni) {
+      setErrors((prev) => ({ ...prev, dni: "Ingresa tu DNI para poder validar" }));
+      return;
+    }
+
+    if (cleanDni === "75174517") {
+      setFormData((prev) => ({ ...prev, isVecinoSurcano: true }));
+      setValidationStatus({
+        text: "¡Felicidades! DNI validado como Vecino Surcano. Se aplicó un 50% de descuento automático.",
+        isSuccess: true,
+      });
+    } else {
+      setFormData((prev) => ({ ...prev, isVecinoSurcano: false }));
+      setValidationStatus({
+        text: "El DNI ingresado no figura en el padrón de Vecinos Surcanos. No se aplica descuento.",
+        isSuccess: false,
+      });
     }
   };
 
@@ -138,8 +182,11 @@ export default function FormularioDatos({
     }
   };
 
-  const pricePerHour = 15;
-  const totalPrice = selectedHoursCount * pricePerHour;
+  const unitPrice = activeSpaceCategory?.pricePerHour || 15;
+  const subtotal = selectedHoursCount * unitPrice;
+  const isVecinoSurcano = formData.isVecinoSurcano || false;
+  const discount = isVecinoSurcano ? subtotal * 0.5 : 0;
+  const totalPrice = subtotal - discount;
 
   return (
     <section className="py-10 sm:py-16 bg-gray-50/80 min-h-[70vh]">
@@ -266,6 +313,34 @@ export default function FormularioDatos({
                       {errors.dni}
                     </p>
                   )}
+
+                  {/* Botón de validación de Vecino Surcano */}
+                  <button
+                    type="button"
+                    onClick={handleValidarVecinoSurcano}
+                    className="mt-2.5 w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer border border-amber-500/40"
+                  >
+                    <Sparkles className="w-4 h-4 text-slate-900" />
+                    <span>Validar si es vecino surcano</span>
+                  </button>
+
+                  {/* Mensaje de estado de validación */}
+                  {validationStatus && (
+                    <div
+                      className={`mt-2 p-2.5 rounded-xl text-xs font-semibold flex items-start gap-2 border ${
+                        validationStatus.isSuccess
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200"
+                          : "bg-amber-50 text-amber-800 border-amber-200"
+                      }`}
+                    >
+                      <CheckCircle2
+                        className={`w-4 h-4 mt-0.5 shrink-0 ${
+                          validationStatus.isSuccess ? "text-emerald-600" : "text-amber-600"
+                        }`}
+                      />
+                      <span>{validationStatus.text}</span>
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -389,11 +464,25 @@ export default function FormularioDatos({
               </div>
             </div>
 
-            <div className="pt-3 border-t border-blue-100 flex items-center justify-between">
-              <span className="text-xs font-bold text-gray-600">Total a Pagar:</span>
-              <span className="text-2xl font-extrabold text-blue-600">
-                S/ {((activeSpaceCategory?.pricePerHour || 15) * selectedHoursCount).toFixed(2)}
-              </span>
+            <div className="pt-3 border-t border-blue-100 space-y-2">
+              {isVecinoSurcano && (
+                <>
+                  <div className="flex items-center justify-between text-xs text-gray-600">
+                    <span>Subtotal:</span>
+                    <span className="font-semibold text-gray-800">S/ {subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-emerald-700 font-bold bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    <span>Descuento Vecino Surcano (50%):</span>
+                    <span>-S/ {discount.toFixed(2)}</span>
+                  </div>
+                </>
+              )}
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-gray-600">Total a Pagar:</span>
+                <span className="text-2xl font-extrabold text-blue-600">
+                  S/ {totalPrice.toFixed(2)}
+                </span>
+              </div>
             </div>
           </div>
         </div>
