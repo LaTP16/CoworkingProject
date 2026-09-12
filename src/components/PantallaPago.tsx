@@ -17,6 +17,7 @@ import {
   Mail,
   CreditCard,
   Hash,
+  Clock,
 } from "lucide-react";
 import { SEDES_DATABASE, findSpaceById } from "@/data/sedesData";
 import { ClientData } from "@/components/FormularioDatos";
@@ -106,17 +107,17 @@ export default function PantallaPago({
     }
   }, [isMounted, paymentMethod, voucherCode, isCompleted]);
 
+  // Estados para integración en tiempo real y notificaciones
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [registeredReserva, setRegisteredReserva] = useState<any>(null);
+  const [notificationData, setNotificationData] = useState<any>(null);
+
   const fileInputIdYape = useId();
 
   const handleCopyCode = () => {
     navigator.clipboard.writeText(operationCode);
     setCopiedCode(true);
     setTimeout(() => setCopiedCode(false), 2000);
-  };
-
-  const handleFinish = (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsCompleted(true);
   };
 
   // Datos del cliente con fallback por si no se reciben por props
@@ -129,11 +130,68 @@ export default function PantallaPago({
     isVecinoSurcano: false,
   };
 
+  const handleFinish = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsRegistering(true);
+
+    const firstHour = selectedHourLabels[0] || "10:00 - 11:00";
+    const horaInicio = firstHour.split(" - ")[0] || "10:00";
+
+    const payload = {
+      sedeId: currentSede.id,
+      sedeNombre: currentSede.name,
+      sedeDireccion: currentSede.description,
+      espacioId: spaceId || "individuales",
+      espacioNombre: activeSpaceCategory?.name || "Espacio Individual",
+      precioPorHora: pricePerHour,
+      fecha: `2026-09-${String(day || 15).padStart(2, "0")}`,
+      horaInicio,
+      duracionHoras: selectedHoursCount,
+      esVecinoSurco: isVecinoSurcano,
+      descuentoMonto: discount,
+      montoTotal: totalPrice,
+      cliente: {
+        nombres: `${defaultClient.nombres} ${defaultClient.apellidos}`.trim(),
+        dni: defaultClient.dni,
+        correo: defaultClient.correo,
+        celular: defaultClient.celular,
+        distrito: isVecinoSurcano ? "Santiago de Surco" : "Otro distrito",
+      },
+      metodoPago: paymentMethod === "yape" ? "Yape / Plin QR" : "Pago en Caja Presencial",
+    };
+
+    try {
+      // 1. Guardar en tiempo real en la base de datos
+      const res = await fetch("/api/reservas", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      const resSaved = data.reserva;
+      setRegisteredReserva(resSaved);
+
+      // 2. Generar notificaciones por WhatsApp y Gmail con el reglamento
+      const notifRes = await fetch("/api/notificaciones", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reserva: resSaved }),
+      });
+      const notifData = await notifRes.json();
+      setNotificationData(notifData.notificaciones);
+    } catch (err) {
+      console.error("Error al registrar:", err);
+    } finally {
+      setIsRegistering(false);
+      setIsCompleted(true);
+    }
+  };
+
   return (
     <section className="py-10 sm:py-16 bg-gray-50/80 min-h-[70vh]">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Botón de Volver al formulario de Datos */}
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
           <button
             onClick={onBack}
             type="button"
@@ -146,29 +204,87 @@ export default function PantallaPago({
 
         {/* PANTALLA DE CONFIRMACIÓN DE RESERVA EXITOSA */}
         {isCompleted ? (
-          <div className="bg-white border border-emerald-200 rounded-3xl p-8 sm:p-12 text-center shadow-xl max-w-2xl mx-auto animate-fade-in">
-            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-6">
+          <div className="bg-white border border-emerald-200 rounded-3xl p-6 sm:p-10 text-center shadow-xl max-w-2xl mx-auto animate-fade-in space-y-6">
+            <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
               <CheckCircle2 className="w-10 h-10" />
             </div>
 
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-2">
-              ¡Reserva y Pago Registrados con Éxito!
-            </h3>
-            <p className="text-sm text-gray-600 mb-6 max-w-md mx-auto">
-              Hemos enviado los detalles y el comprobante de tu reserva a{" "}
-              <strong className="text-gray-800">{defaultClient.correo}</strong>.
-            </p>
+            <div>
+              <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200 inline-block mb-2">
+                ✓ Reserva Confirmada
+              </span>
+              <h3 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
+                ¡Reserva Confirmada y Registrada!
+              </h3>
+              <p className="text-xs sm:text-sm text-gray-600 mt-1 max-w-md mx-auto">
+                Código Oficial: <strong className="text-blue-700 font-black">{registeredReserva?.codigoReserva || operationCode}</strong>
+              </p>
+            </div>
+
+            {/* Acciones Inmediatas: WhatsApp con Reglamento & Gmail */}
+            <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 text-left space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <span className="font-bold text-xs text-slate-800">Notificaciones Inmediatas</span>
+                <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full font-bold">
+                  Automático
+                </span>
+              </div>
+
+              {/* Botón WhatsApp de Confirmación + Reglamento */}
+              {notificationData?.whatsapp?.url && (
+                <a
+                  href={notificationData.whatsapp.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                >
+                  <span className="text-base">📲</span>
+                  <span>Enviar Confirmación y Reglamento a mi WhatsApp</span>
+                </a>
+              )}
+
+              {/* Estado Gmail */}
+              <div className="flex items-center gap-2 text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100">
+                <Mail className="w-4 h-4 text-blue-600 shrink-0" />
+                <span>
+                  Comprobante y <strong>Reglas de Uso del Coworking</strong> enviados a <strong>{defaultClient.correo}</strong>.
+                </span>
+              </div>
+
+              {/* Temporizador y Encuesta de Satisfacción a los 10 minutos */}
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-3 text-xs text-purple-900 space-y-1">
+                <div className="flex items-center gap-1.5 font-bold">
+                  <Clock className="w-4 h-4 text-purple-600" />
+                  <span>Cálculo de Uso y Encuesta de Satisfacción</span>
+                </div>
+                <p className="text-[11px] leading-relaxed text-purple-800">
+                  Tu reserva rige de <strong>{registeredReserva?.horaInicio || "10:00"}</strong> a <strong>{registeredReserva?.horaFin || "12:00"}</strong> ({selectedHoursCount} hr). 
+                  A las <strong>{registeredReserva?.horaEncuesta || "12:10"}</strong> (10 minutos después de expirar) recibirás tu encuesta de satisfacción vía WhatsApp para evaluar tu experiencia y sugerir mejoras.
+                </p>
+
+                {notificationData?.survey?.url && (
+                  <a
+                    href={notificationData.survey.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-extrabold text-purple-700 hover:text-purple-900 underline pt-1"
+                  >
+                    <span>👉 Probar vista previa del WhatsApp de Encuesta</span>
+                  </a>
+                )}
+              </div>
+            </div>
 
             {/* Ficha Resumen Final */}
-            <div className="bg-gray-50 border border-gray-200/80 rounded-2xl p-6 text-left mb-8 space-y-3 text-xs sm:text-sm">
+            <div className="bg-gray-50 border border-gray-200/80 rounded-2xl p-5 text-left space-y-2.5 text-xs sm:text-sm">
               <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500 font-medium">Titular de la Reserva:</span>
+                <span className="text-gray-500 font-medium">Titular:</span>
                 <span className="font-bold text-gray-900">
                   {defaultClient.nombres} {defaultClient.apellidos}
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500 font-medium">DNI / Identificación:</span>
+                <span className="text-gray-500 font-medium">DNI:</span>
                 <span className="font-bold text-gray-800">
                   {defaultClient.dni}
                   {isVecinoSurcano && (
@@ -179,62 +295,38 @@ export default function PantallaPago({
                 </span>
               </div>
               <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500 font-medium">Celular de Contacto:</span>
-                <span className="font-bold text-gray-800">{defaultClient.celular}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500 font-medium">Método de Pago Seleccionado:</span>
-                <span className="font-extrabold text-blue-600">
-                  {paymentMethod === "yape"
-                    ? "Yape / Plin (Pago con QR & Voucher)"
-                    : "Pago en Caja de Coworking"}
-                </span>
-              </div>
-
-              {paymentMethod === "presencial" && (
-                <div className="flex justify-between items-center border-b pb-2 bg-blue-50/70 p-3 rounded-xl border border-blue-100">
-                  <span className="text-blue-900 font-bold">Código para Presentar en Caja:</span>
-                  <span className="font-black text-blue-700 text-lg">{operationCode}</span>
-                </div>
-              )}
-
-              {paymentMethod === "yape" && voucherCode && (
-                <div className="flex justify-between border-b pb-2">
-                  <span className="text-gray-500 font-medium">N° Voucher Digital:</span>
-                  <span className="font-bold text-purple-700">{voucherCode}</span>
-                </div>
-              )}
-
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500 font-medium">Sede:</span>
-                <span className="font-bold text-gray-800">{currentSede.name}</span>
-              </div>
-              <div className="flex justify-between border-b pb-2">
-                <span className="text-gray-500 font-medium">Fecha & Espacio:</span>
+                <span className="text-gray-500 font-medium">Sede & Espacio:</span>
                 <span className="font-bold text-gray-800">
-                  Sept. {day}, 2026 — {activeSpaceCategory?.name}
+                  {currentSede.name} — {activeSpaceCategory?.name}
                 </span>
               </div>
-
+              <div className="flex justify-between border-b pb-2">
+                <span className="text-gray-500 font-medium">Fecha y Horario:</span>
+                <span className="font-bold text-gray-800">
+                  Sept. {day}, 2026 | {selectedHourLabels.join(", ")}
+                </span>
+              </div>
               {isVecinoSurcano && (
                 <div className="flex justify-between border-b pb-2 text-emerald-700 font-semibold">
                   <span>Descuento Vecino Surcano (50%):</span>
                   <span>-S/ {discount.toFixed(2)}</span>
                 </div>
               )}
-
               <div className="flex justify-between pt-1 font-bold text-base text-gray-900">
-                <span>Monto Total Abonado:</span>
+                <span>Monto Total Pagado:</span>
                 <span className="text-emerald-600">S/ {totalPrice.toFixed(2)}</span>
               </div>
             </div>
 
-            <button
-              onClick={onBack}
-              className="px-8 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
-            >
-              Volver al Inicio
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-3 pt-2">
+              <button
+                onClick={onBack}
+                type="button"
+                className="px-6 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer"
+              >
+                Volver al Inicio
+              </button>
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">

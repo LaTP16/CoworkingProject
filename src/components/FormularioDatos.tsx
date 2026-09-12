@@ -124,25 +124,61 @@ export default function FormularioDatos({
     }
   };
 
-  const handleValidarVecinoSurcano = () => {
-    const cleanDni = formData.dni.trim();
+  const [isValidatingDni, setIsValidatingDni] = useState(false);
+
+  const handleValidarVecinoSurcano = async (dniToValidate?: string) => {
+    const cleanDni = (dniToValidate || formData.dni).trim();
     if (!cleanDni) {
       setErrors((prev) => ({ ...prev, dni: "Ingresa tu DNI para poder validar" }));
       return;
     }
 
-    if (cleanDni === "75174517") {
-      setFormData((prev) => ({ ...prev, isVecinoSurcano: true }));
+    if (cleanDni.length !== 8) {
+      setErrors((prev) => ({ ...prev, dni: "El DNI debe tener 8 dígitos numéricos" }));
+      return;
+    }
+
+    setIsValidatingDni(true);
+    try {
+      const res = await fetch(`/api/vecinos?dni=${encodeURIComponent(cleanDni)}`);
+      const data = await res.json();
+
+      if (data.encontrado) {
+        setFormData((prev) => ({
+          ...prev,
+          dni: cleanDni,
+          nombres: prev.nombres || data.persona?.nombres || "",
+          apellidos: prev.apellidos || data.persona?.apellidos || "",
+          correo: prev.correo || data.persona?.correo || "",
+          celular: prev.celular || data.persona?.celular || "",
+          isVecinoSurcano: !!data.esVecinoSurco,
+        }));
+
+        if (data.esVecinoSurco) {
+          setValidationStatus({
+            text: `¡DNI validado en el Padrón de Santiago de Surco! Se aplicó un 50% de descuento automático a ${data.persona?.nombres}.`,
+            isSuccess: true,
+          });
+        } else {
+          setValidationStatus({
+            text: `Residente de ${data.persona?.distrito}. Registrado exitosamente (tarifa estándar).`,
+            isSuccess: false,
+          });
+        }
+      } else {
+        setFormData((prev) => ({ ...prev, isVecinoSurcano: false }));
+        setValidationStatus({
+          text: "DNI no registrado en el padrón de Surco. Se aplicará tarifa estándar sin descuento.",
+          isSuccess: false,
+        });
+      }
+    } catch {
       setValidationStatus({
-        text: "¡Felicidades! DNI validado como Vecino Surcano. Se aplicó un 50% de descuento automático.",
-        isSuccess: true,
-      });
-    } else {
-      setFormData((prev) => ({ ...prev, isVecinoSurcano: false }));
-      setValidationStatus({
-        text: "El DNI ingresado no figura en el padrón de Vecinos Surcanos. No se aplica descuento.",
+        text: "No se pudo conectar con el padrón municipal. Se aplicará tarifa estándar.",
         isSuccess: false,
       });
+    } finally {
+      setIsValidatingDni(false);
     }
   };
 
@@ -317,12 +353,32 @@ export default function FormularioDatos({
                   {/* Botón de validación de Vecino Surcano */}
                   <button
                     type="button"
-                    onClick={handleValidarVecinoSurcano}
-                    className="mt-2.5 w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-500 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer border border-amber-500/40"
+                    disabled={isValidatingDni}
+                    onClick={() => handleValidarVecinoSurcano()}
+                    className="mt-2.5 w-full py-2.5 px-3 rounded-xl bg-amber-400 hover:bg-amber-500 disabled:opacity-60 text-slate-950 font-bold text-xs flex items-center justify-center gap-1.5 transition-all shadow-xs cursor-pointer border border-amber-500/40"
                   >
-                    <Sparkles className="w-4 h-4 text-slate-900" />
-                    <span>Validar si es vecino surcano</span>
+                    <Sparkles className={`w-4 h-4 text-slate-900 ${isValidatingDni ? "animate-spin" : ""}`} />
+                    <span>{isValidatingDni ? "Consultando Padrón Municipal..." : "Validar si es vecino surcano"}</span>
                   </button>
+
+                  {/* Chips de prueba rápida para la demostración */}
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[10px] text-gray-400 font-medium">Probar con:</span>
+                    <button
+                      type="button"
+                      onClick={() => handleValidarVecinoSurcano("63534089")}
+                      className="text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-md border border-blue-200 transition-colors cursor-pointer"
+                    >
+                      DNI Surco: 63534089
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleValidarVecinoSurcano("72575770")}
+                      className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-2 py-0.5 rounded-md border border-gray-200 transition-colors cursor-pointer"
+                    >
+                      Otro distrito: 72575770
+                    </button>
+                  </div>
 
                   {/* Mensaje de estado de validación */}
                   {validationStatus && (

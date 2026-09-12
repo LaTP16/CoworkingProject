@@ -59,7 +59,7 @@ export default function Navbar({ onNavigateHome }: NavbarProps) {
               rel="noopener noreferrer"
               className="text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors"
             >
-              Contacto
+              Soporte
             </a>
           </nav>
 
@@ -102,7 +102,7 @@ export default function Navbar({ onNavigateHome }: NavbarProps) {
             onClick={() => setIsOpen(false)}
             className="block px-3 py-2 rounded-lg text-base font-medium text-gray-600 hover:bg-gray-50 hover:text-blue-600 transition-colors"
           >
-            Contacto
+            Soporte
           </a>
         </div>
       )}
