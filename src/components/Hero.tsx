@@ -43,6 +43,7 @@ const TYPEWRITER_PHRASES = [
 
 const CAROUSEL_SEDES = [
   {
+    slideId: "parque-amistad-main",
     id: "parque-amistad",
     name: "Sede Parque de la Amistad",
     tag: "Zona Verde & Silencioso",
@@ -54,6 +55,7 @@ const CAROUSEL_SEDES = [
     features: ["Wi-Fi 500 Mbps", "Café Gourmet Libre", "Áreas Verdes"],
   },
   {
+    slideId: "surco-pueblo-main",
     id: "surco-pueblo",
     name: "Sede Surco Pueblo",
     tag: "Céntrico & Dinámico",
@@ -65,6 +67,7 @@ const CAROUSEL_SEDES = [
     features: ["Pizarras Vidrio", "Videoconferencia 4K", "Aire Acondicionado"],
   },
   {
+    slideId: "castilla-main",
     id: "castilla",
     name: "Sede Castilla",
     tag: "Tecnológico & Premium",
@@ -76,26 +79,28 @@ const CAROUSEL_SEDES = [
     features: ["Vistas Panorámicas", "Estaciones Ergonomía A1", "Lounge Barista"],
   },
   {
-    id: "miraflores",
-    name: "Sede Miraflores Executive",
-    tag: "Business & Vista al Mar",
-    location: "Av. Larco 1020, Miraflores",
-    spacesCount: "40 estaciones • 8 oficinas • 2 directorios",
+    slideId: "parque-amistad-reuniones",
+    id: "parque-amistad",
+    name: "Sala de Reuniones Ejecutiva",
+    tag: "Sala Disponible • Equipos 8-15 p.",
+    location: "Disponible en Sede Parque de la Amistad & Surco Pueblo",
+    spacesCount: "4 salas equipadas • Pantallas 4K • Pizarras de Vidrio",
     rating: 4.92,
-    bgGradient: "from-blue-800 via-indigo-700 to-sky-500",
-    image: "/images/sedes/miraflores.jpg",
-    features: ["Terraza Networking", "Salas de Directorio", "Cafetería Gourmet"],
+    bgGradient: "from-blue-700 via-sky-600 to-indigo-700",
+    image: "/images/spaces/trabajo.jpg",
+    features: ["Pantalla Interactiva 4K", "Videoconferencia", "Café Gourmet Libre"],
   },
   {
-    id: "san-isidro",
-    name: "Sede San Isidro Financial",
-    tag: "Corporativo & Innovación",
-    location: "Av. Rivera Navarrete 450, San Isidro",
-    spacesCount: "60 escritorios • 12 privadas • Pods acústicos",
-    rating: 4.97,
-    bgGradient: "from-sky-500 via-blue-600 to-indigo-800",
-    image: "/images/sedes/san-isidro.jpg",
-    features: ["Pods Insonorizados", "Acceso 24/7", "Valet Parking"],
+    slideId: "parque-amistad-conferencias",
+    id: "parque-amistad",
+    name: "Sala de Conferencias & Auditorio",
+    tag: "Sala Disponible • Aforo 40 p.",
+    location: "Disponible en Sede Parque de la Amistad",
+    spacesCount: "1 gran auditorio • Proyector HD • Podio Ejecutivo",
+    rating: 4.98,
+    bgGradient: "from-indigo-700 via-blue-800 to-sky-600",
+    image: "/images/spaces/conferencias.jpg",
+    features: ["Proyector HD & Podio", "Sistema de Sonido", "Wi-Fi 500 Mbps"],
   },
 ];
 
@@ -604,7 +609,7 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
             >
               {CAROUSEL_SEDES.map((item) => (
                 <div
-                  key={item.id}
+                  key={item.slideId}
                   className="w-full flex-shrink-0 p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-left"
                 >
                   {/* Tarjeta Visual de Presentación con imagen y armonía de texto */}

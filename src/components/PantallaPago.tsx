@@ -136,6 +136,8 @@ export default function PantallaPago({
 
     const firstHour = selectedHourLabels[0] || "10:00 - 11:00";
     const horaInicio = firstHour.split(" - ")[0] || "10:00";
+    const horariosTexto = selectedHourLabels.length > 0 ? selectedHourLabels.join(", ") : "10:00 - 11:00, 11:00 - 12:00";
+    const fechaFormateada = `Sept. ${day || 18}, 2026`;
 
     const payload = {
       sedeId: currentSede.id,
@@ -144,9 +146,11 @@ export default function PantallaPago({
       espacioId: spaceId || "individuales",
       espacioNombre: activeSpaceCategory?.name || "Espacio Individual",
       precioPorHora: pricePerHour,
-      fecha: `2026-09-${String(day || 15).padStart(2, "0")}`,
+      fecha: fechaFormateada,
       horaInicio,
       duracionHoras: selectedHoursCount,
+      horariosTexto,
+      selectedHourLabels,
       esVecinoSurco: isVecinoSurcano,
       descuentoMonto: discount,
       montoTotal: totalPrice,
@@ -230,18 +234,64 @@ export default function PantallaPago({
                 </span>
               </div>
 
-              {/* Botón WhatsApp de Confirmación + Reglamento */}
-              {notificationData?.whatsapp?.url && (
-                <a
-                  href={notificationData.whatsapp.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
-                >
-                  <span className="text-base">📲</span>
-                  <span>Enviar Confirmación y Reglamento a mi WhatsApp</span>
-                </a>
-              )}
+              {/* Botón WhatsApp de Confirmación + Normas de uso + Recomendaciones */}
+              {(() => {
+                const userPhoneClean = (defaultClient.celular || "").replace(/\D/g, "");
+                const phoneWithCountry = userPhoneClean.startsWith("51") ? userPhoneClean : `51${userPhoneClean}`;
+                
+                const nombreCliente = `${defaultClient.nombres} ${defaultClient.apellidos}`.trim();
+                const codigoOp = registeredReserva?.codigoReserva || operationCode;
+                const fechaDisp = `Sept. ${day || 18}, 2026`;
+                const horarioDisp = selectedHourLabels.length > 0 ? selectedHourLabels.join(", ") : "10:00 - 11:00, 11:00 - 12:00";
+                const espacioDisp = activeSpaceCategory?.name || "Espacio Individual";
+                const sedeDisp = currentSede.name;
+                const montoDisp = totalPrice.toFixed(2);
+
+                const whatsappMessageBody = `📌 *¡CONFIRMACIÓN DE RESERVA - ESPACIAPP COWORKING!* 📌
+
+Hola ${nombreCliente}, tu reserva ha sido registrada con éxito.
+
+*DETALLES DE LA RESERVA:*
+* *Titular:* ${nombreCliente} (DNI: ${defaultClient.dni})
+* *Sede:* ${sedeDisp}
+* *Espacio:* ${espacioDisp}
+* *Fecha:* ${fechaDisp}
+* *Horario:* ${horarioDisp}
+* *Código de Operación:* ${codigoOp}
+* *Monto Total:* S/ ${montoDisp}
+
+----------------------------------------
+📜 *NORMAS DE USO DEL ESPACIO:*
+1. Mantener el volumen de voz bajo en zonas compartidas.
+2. Prohibido fumar o vapear dentro de las instalaciones.
+3. Consumir alimentos únicamente en la cafetería/lounge.
+4. Respetar los horarios de inicio y término de tu reserva.
+5. Mantener limpio y ordenado tu espacio al retirarte.
+
+----------------------------------------
+💡 *RECOMENDACIONES PARA TU VISITA:*
+* Llegar 10 minutos antes para registrar tu ingreso.
+* Presentar tu DNI o código ${codigoOp} en recepción.
+* Solicitar en recepción la clave de Wi-Fi (500 Mbps) y disfrutar del café libre.
+* Usar audífonos para llamadas en zonas comunes.
+
+Contacto & Soporte Oficial: +51 994 314 523
+¡Gracias por reservar con EspaciApp! ☕🚀`;
+
+                const finalUrl = notificationData?.whatsapp?.url || `https://api.whatsapp.com/send?phone=${phoneWithCountry}&text=${encodeURIComponent(whatsappMessageBody)}`;
+
+                return (
+                  <a
+                    href={finalUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full py-3.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-xs sm:text-sm flex items-center justify-center gap-2.5 transition-all shadow-md hover:scale-[1.01] cursor-pointer"
+                  >
+                    <span className="text-xl">📲</span>
+                    <span>Enviar mensaje a mi WhatsApp (Confirmación, Normas y Recomendaciones)</span>
+                  </a>
+                );
+              })()}
 
               {/* Estado Gmail */}
               <div className="flex items-center gap-2 text-xs text-slate-600 bg-white p-2.5 rounded-xl border border-slate-100">

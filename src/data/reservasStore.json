@@ -288,5 +288,34 @@
     "metodoPago": "Pago en Caja Presencial",
     "estado": "activa",
     "encuestaEnviada": false
+  },
+  {
+    "id": "res-1789241111502",
+    "codigoReserva": "SURCO-CW-4763",
+    "createdAt": "2026-09-12T19:25:11.502Z",
+    "sedeId": "parque-amistad",
+    "sedeNombre": "Parque de la Amistad",
+    "sedeDireccion": "Un ambiente tranquilo rodeado de áreas verdes, ideal para la concentración profunda.",
+    "espacioId": "individuales",
+    "espacioNombre": "Espacios individuales",
+    "precioPorHora": 8,
+    "fecha": "Sept. 2, 2026",
+    "horaInicio": "15:00",
+    "duracionHoras": 3,
+    "horaFin": "18:00",
+    "horaEncuesta": "18:10",
+    "esVecinoSurco": true,
+    "descuentoMonto": 12,
+    "montoTotal": 12,
+    "cliente": {
+      "nombres": "Luis Antonio Tasayco Portello",
+      "dni": "63534089",
+      "correo": "luistasayco34@gmail.com",
+      "celular": "902733255",
+      "distrito": "Santiago de Surco"
+    },
+    "metodoPago": "Pago en Caja Presencial",
+    "estado": "activa",
+    "encuestaEnviada": false
   }
 ]

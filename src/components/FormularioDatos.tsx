@@ -361,24 +361,6 @@ export default function FormularioDatos({
                     <span>{isValidatingDni ? "Consultando Padrón Municipal..." : "Validar si es vecino surcano"}</span>
                   </button>
 
-                  {/* Chips de prueba rápida para la demostración */}
-                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                    <span className="text-[10px] text-gray-400 font-medium">Probar con:</span>
-                    <button
-                      type="button"
-                      onClick={() => handleValidarVecinoSurcano("63534089")}
-                      className="text-[10px] bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-md border border-blue-200 transition-colors cursor-pointer"
-                    >
-                      DNI Surco: 63534089
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleValidarVecinoSurcano("72575770")}
-                      className="text-[10px] bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-2 py-0.5 rounded-md border border-gray-200 transition-colors cursor-pointer"
-                    >
-                      Otro distrito: 72575770
-                    </button>
-                  </div>
 
                   {/* Mensaje de estado de validación */}
                   {validationStatus && (
