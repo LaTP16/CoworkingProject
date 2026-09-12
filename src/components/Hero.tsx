@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import {
   Sparkles,
   ArrowRight,
@@ -18,8 +18,15 @@ import {
   Wifi,
   Coffee,
   ShieldCheck,
+  CheckCircle2,
+  Target,
+  Users,
+  Lock,
+  User,
+  Presentation,
 } from "lucide-react";
 import { SEDES_DATABASE, SpaceCategory, SedeInfo } from "@/data/sedesData";
+import { classifyPromptIntent, SpaceTypeMatch } from "@/utils/spaceClassifier";
 import SpaceDetailModal from "@/components/SpaceDetailModal";
 
 interface HeroProps {
@@ -43,6 +50,7 @@ const CAROUSEL_SEDES = [
     spacesCount: "54 escritorios • 6 privadas • 4 salas",
     rating: 4.9,
     bgGradient: "from-blue-600 via-blue-700 to-sky-500",
+    image: "/images/sedes/parque-amistad-slide.jpg",
     features: ["Wi-Fi 500 Mbps", "Café Gourmet Libre", "Áreas Verdes"],
   },
   {
@@ -53,6 +61,7 @@ const CAROUSEL_SEDES = [
     spacesCount: "34 estaciones • 5 privadas • 4 reuniones",
     rating: 4.88,
     bgGradient: "from-indigo-600 via-blue-800 to-sky-400",
+    image: "/images/sedes/surco-pueblo-slide.jpg",
     features: ["Pizarras Vidrio", "Videoconferencia 4K", "Aire Acondicionado"],
   },
   {
@@ -63,6 +72,7 @@ const CAROUSEL_SEDES = [
     spacesCount: "16 premium flex • 2 ejec. • Lounge Social",
     rating: 4.95,
     bgGradient: "from-sky-600 via-cyan-600 to-blue-700",
+    image: "/images/sedes/castilla-slide.jpg",
     features: ["Vistas Panorámicas", "Estaciones Ergonomía A1", "Lounge Barista"],
   },
   {
@@ -73,6 +83,7 @@ const CAROUSEL_SEDES = [
     spacesCount: "40 estaciones • 8 oficinas • 2 directorios",
     rating: 4.92,
     bgGradient: "from-blue-800 via-indigo-700 to-sky-500",
+    image: "/images/sedes/miraflores.jpg",
     features: ["Terraza Networking", "Salas de Directorio", "Cafetería Gourmet"],
   },
   {
@@ -83,6 +94,7 @@ const CAROUSEL_SEDES = [
     spacesCount: "60 escritorios • 12 privadas • Pods acústicos",
     rating: 4.97,
     bgGradient: "from-sky-500 via-blue-600 to-indigo-800",
+    image: "/images/sedes/san-isidro.jpg",
     features: ["Pods Insonorizados", "Acceso 24/7", "Valet Parking"],
   },
 ];
@@ -181,43 +193,11 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
     setCurrentSlideIndex((prev) => (prev + 1) % CAROUSEL_SEDES.length);
   };
 
-  // Función para obtener sugerencias según el prompt ingresado
-  const getRecommendedSpaces = (promptText: string) => {
-    const lower = promptText.toLowerCase();
-
-    if (
-      lower.includes("equipo") ||
-      lower.includes("reun") ||
-      lower.includes("sala") ||
-      lower.includes("conferencia")
-    ) {
-      return [
-        { sede: SEDES_DATABASE["parque-amistad"], space: SEDES_DATABASE["parque-amistad"].spaces[2] },
-        { sede: SEDES_DATABASE["surco-pueblo"], space: SEDES_DATABASE["surco-pueblo"].spaces[3] },
-        { sede: SEDES_DATABASE["castilla"], space: SEDES_DATABASE["castilla"].spaces[2] },
-      ];
-    }
-
-    if (
-      lower.includes("privad") ||
-      lower.includes("oficina") ||
-      lower.includes("cerrad")
-    ) {
-      return [
-        { sede: SEDES_DATABASE["parque-amistad"], space: SEDES_DATABASE["parque-amistad"].spaces[1] },
-        { sede: SEDES_DATABASE["surco-pueblo"], space: SEDES_DATABASE["surco-pueblo"].spaces[1] },
-        { sede: SEDES_DATABASE["castilla"], space: SEDES_DATABASE["castilla"].spaces[1] },
-      ];
-    }
-
-    return [
-      { sede: SEDES_DATABASE["parque-amistad"], space: SEDES_DATABASE["parque-amistad"].spaces[0] },
-      { sede: SEDES_DATABASE["castilla"], space: SEDES_DATABASE["castilla"].spaces[0] },
-      { sede: SEDES_DATABASE["surco-pueblo"], space: SEDES_DATABASE["surco-pueblo"].spaces[0] },
-    ];
-  };
-
-  const recommendedList = activePrompt ? getRecommendedSpaces(activePrompt) : [];
+  // Clasificación inteligente del prompt mediante el motor spaceClassifier
+  const classificationResult = useMemo<SpaceTypeMatch | null>(() => {
+    if (!activePrompt) return null;
+    return classifyPromptIntent(activePrompt);
+  }, [activePrompt]);
 
   return (
     <section className="relative min-h-screen w-full overflow-hidden bg-white/50 flex flex-col justify-between items-center text-center px-4 sm:px-6 lg:px-8 py-12 md:py-16">
@@ -290,20 +270,20 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
         {/* ========================================================
             PANEL DE RESULTADOS Y SUGERENCIAS RECOMENDADAS
            ======================================================== */}
-        {showSuggestions && activePrompt && (
+        {showSuggestions && activePrompt && classificationResult && (
           <div
             ref={suggestionsRef}
-            className="w-full max-w-3xl mx-auto mb-12 bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-sky-200 shadow-2xl text-left animate-fade-in space-y-6"
+            className="w-full max-w-4xl mx-auto mb-12 bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-8 border border-sky-200 shadow-2xl text-left animate-fade-in space-y-6"
           >
-            {/* Header del resultado con badge IA */}
+            {/* Header del resultado con badge IA y botón cerrar */}
             <div className="flex items-start justify-between gap-4 border-b border-slate-100 pb-4">
               <div className="space-y-1">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-50 text-sky-700 text-xs font-bold border border-sky-100">
-                  <Sparkles className="w-3.5 h-3.5 text-sky-500" />
-                  <span>Sugerencias para tu búsqueda</span>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-bold border border-blue-100">
+                  <Sparkles className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Diagnóstico Inteligente de Espacio</span>
                 </div>
                 <p className="text-sm md:text-base text-slate-700 font-medium pt-1">
-                  Basándonos en tu necesidad: <span className="font-bold text-slate-900 italic">"{activePrompt}"</span>, hemos encontrado estos espacios recomendados con sus mejores valoraciones:
+                  Analizando tu búsqueda: <span className="font-bold text-slate-900 italic">"{activePrompt}"</span>
                 </p>
               </div>
 
@@ -317,56 +297,139 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
               </button>
             </div>
 
-            {/* Cuadrícula de 3 Tarjetas Recomendadas */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {recommendedList.map(({ sede, space }) => {
-                const topReview = space.reviews?.[0];
-                return (
-                  <div
-                    key={`${sede.id}-${space.id}`}
-                    className="bg-slate-50/80 hover:bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
-                  >
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {sede.name}
+            {/* Tarjeta destacada del Tipo de Espacio Recomendado */}
+            <div className="bg-gradient-to-br from-blue-50/80 via-sky-50/50 to-indigo-50/70 border border-blue-100 rounded-2xl p-5 md:p-6 space-y-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold px-3 py-1 rounded-full bg-blue-600 text-white shadow-xs">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  {classificationResult.badge}
+                </span>
+
+                <span className="text-xs font-extrabold text-blue-800 bg-white/80 backdrop-blur-xs px-3 py-1 rounded-full border border-blue-200 flex items-center gap-1">
+                  <Target className="w-3.5 h-3.5 text-blue-600" />
+                  {classificationResult.confidence}% de afinidad con tu búsqueda
+                </span>
+              </div>
+
+              <div>
+                <h3 className="text-xl md:text-2xl font-black text-slate-900 tracking-tight">
+                  {classificationResult.title}
+                </h3>
+                <p className="text-sm md:text-base text-slate-700 font-medium mt-1 leading-relaxed">
+                  {classificationResult.detailedReason}
+                </p>
+              </div>
+
+              {/* Atributos clave y palabras detectadas */}
+              <div className="pt-3 border-t border-blue-100/80 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                <div className="space-y-1.5">
+                  <span className="font-bold uppercase tracking-wider text-slate-500 block">
+                    Aforo y características recomendadas:
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-slate-200">
+                      👥 Aforo: {classificationResult.recommendedCapacity}
+                    </span>
+                    {classificationResult.highlightedFeatures.slice(0, 2).map((feat, idx) => (
+                      <span key={idx} className="text-slate-600 bg-white/80 px-2.5 py-1 rounded-lg border border-slate-200">
+                        ✓ {feat}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                {classificationResult.matchedKeywords.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="font-bold uppercase tracking-wider text-slate-500 block">
+                      Términos detectados en tu búsqueda:
+                    </span>
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      {classificationResult.matchedKeywords.map((kw, idx) => (
+                        <span key={idx} className="font-semibold text-blue-700 bg-blue-100/70 px-2 py-0.5 rounded-md text-[11px]">
+                          "{kw}"
                         </span>
-                        <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
-                          <Star className="w-3.5 h-3.5 fill-amber-400" />
-                          <span>{space.rating}</span>
-                        </div>
-                      </div>
-
-                      <h4 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-blue-600 transition-colors">
-                        {space.name}
-                      </h4>
-
-                      <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
-                        {space.description}
-                      </p>
-
-                      {/* Comentario de reseña real */}
-                      {topReview && (
-                        <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600 italic">
-                          "{topReview.comment}"
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Botón para ver fotos y reseñas */}
-                    <div className="pt-2">
-                      <button
-                        onClick={() => setActiveModalData({ space, sede })}
-                        type="button"
-                        className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 hover:border-sky-300 text-xs font-bold transition-all shadow-2xs cursor-pointer"
-                      >
-                        <MessageSquare className="w-3.5 h-3.5 text-sky-600" />
-                        <span>Ver fotos y reseñas</span>
-                      </button>
+                      ))}
                     </div>
                   </div>
-                );
-              })}
+                )}
+              </div>
+            </div>
+
+            {/* Listado de Sedes que ofrecen este espacio */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                  Ubicaciones disponibles para {classificationResult.title}:
+                </h4>
+                <span className="text-xs font-semibold text-slate-400">
+                  {classificationResult.matchingSpaces.length} opciones encontradas
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {classificationResult.matchingSpaces.slice(0, 3).map(({ sede, space }) => {
+                  const topReview = space.reviews?.[0];
+                  return (
+                    <div
+                      key={`${sede.id}-${space.id}`}
+                      className="bg-slate-50/80 hover:bg-white p-4 rounded-2xl border border-slate-200/80 hover:border-sky-300 hover:shadow-md transition-all flex flex-col justify-between space-y-3 group"
+                    >
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-[11px] font-bold text-blue-700 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-100 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" /> {sede.name}
+                          </span>
+                          <div className="flex items-center gap-1 text-amber-500 text-xs font-bold">
+                            <Star className="w-3.5 h-3.5 fill-amber-400" />
+                            <span>{space.rating}</span>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h5 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-blue-600 transition-colors">
+                            {space.name}
+                          </h5>
+                          <span className="inline-block mt-0.5 text-[11px] font-extrabold text-blue-700">
+                            S/ {space.pricePerHour || 15}.00 / hr
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">
+                          {space.description}
+                        </p>
+
+                        {/* Comentario de reseña real */}
+                        {topReview && (
+                          <div className="pt-2 border-t border-slate-200/60 text-[11px] text-slate-600 italic">
+                            "{topReview.comment}"
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Botones de acción: Fotos y Reservar */}
+                      <div className="pt-2 space-y-1.5">
+                        <button
+                          onClick={() => setActiveModalData({ space, sede })}
+                          type="button"
+                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-white hover:bg-sky-50 text-sky-700 border border-sky-200 hover:border-sky-300 text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                        >
+                          <MessageSquare className="w-3.5 h-3.5 text-sky-600" />
+                          <span>Ver fotos y reseñas</span>
+                        </button>
+
+                        <button
+                          onClick={() => onSelectSede?.(sede.id)}
+                          type="button"
+                          className="w-full inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+                        >
+                          <span>Reservar en {sede.name}</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Footer con opción de explorar todas las sedes */}
@@ -544,30 +607,41 @@ export default function Hero({ onVerSedes, onSelectSede }: HeroProps) {
                   key={item.id}
                   className="w-full flex-shrink-0 p-6 md:p-8 flex flex-col md:flex-row items-center gap-6 md:gap-8 text-left"
                 >
-                  {/* Tarjeta Visual de Presentación (Sin usar imágenes externas) */}
+                  {/* Tarjeta Visual de Presentación con imagen y armonía de texto */}
                   <div
-                    className={`w-full md:w-1/2 h-56 md:h-64 rounded-2xl bg-gradient-to-br ${item.bgGradient} p-6 text-white flex flex-col justify-between shadow-lg relative overflow-hidden group`}
+                    className="w-full md:w-1/2 h-56 md:h-64 rounded-2xl p-6 text-white flex flex-col justify-between shadow-lg relative overflow-hidden group"
                   >
-                    {/* Elementos decorativos abstractos */}
-                    <div className="absolute -right-8 -bottom-8 w-40 h-40 bg-white/10 rounded-full blur-xl pointer-events-none" />
-                    <div className="absolute top-4 right-4 bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold border border-white/30 flex items-center gap-1">
-                      <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
-                      <span>{item.rating}</span>
+                    {/* Imagen de Fondo de la Sede */}
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                    />
+
+                    {/* Capa de degradado elegante para armonizar y resaltar perfectamente el texto blanco */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/60 to-slate-950/40" />
+
+                    {/* Elementos con su forma y orden exacto */}
+                    <div className="relative z-10 flex justify-end">
+                      <div className="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold border border-white/30 flex items-center gap-1 shadow-sm">
+                        <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                        <span>{item.rating}</span>
+                      </div>
                     </div>
 
-                    <div className="space-y-1">
-                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                    <div className="space-y-1 relative z-10">
+                      <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-sm">
                         <Building2 className="w-6 h-6 text-white" />
                       </div>
-                      <span className="text-xs font-semibold text-sky-100 block pt-2 uppercase tracking-wider">
+                      <span className="text-xs font-semibold text-sky-100 block pt-2 uppercase tracking-wider drop-shadow-xs">
                         {item.tag}
                       </span>
-                      <h3 className="text-xl md:text-2xl font-extrabold text-white leading-tight">
+                      <h3 className="text-xl md:text-2xl font-extrabold text-white leading-tight drop-shadow-sm">
                         {item.name}
                       </h3>
                     </div>
 
-                    <div className="text-xs text-white/90 font-medium flex items-center gap-1.5 pt-2">
+                    <div className="text-xs text-white/90 font-medium flex items-center gap-1.5 pt-2 relative z-10 drop-shadow-xs">
                       <MapPin className="w-3.5 h-3.5 shrink-0 text-sky-200" />
                       <span className="truncate">{item.location}</span>
                     </div>

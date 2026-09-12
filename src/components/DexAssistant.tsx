@@ -5,565 +5,366 @@ import {
   Bot,
   X,
   Send,
-  HelpCircle,
-  RefreshCw,
   Sparkles,
   MapPin,
   ArrowRight,
-  BookOpen,
-  Users,
-  Coffee,
-  Compass,
+  RotateCcw,
+  MessageSquare,
+  CheckCircle2,
+  Calendar,
+  ExternalLink,
 } from "lucide-react";
+import { SEDES_DATABASE, SedeInfo, SpaceCategory } from "@/data/sedesData";
 
-export interface Message {
+export interface DexMessage {
   id: string;
   sender: "dex" | "user";
   text: string;
-  actionSedeId?: string;
-  actionSedeName?: string;
+  recommendedSedeId?: string | null;
+  recommendedSpaceId?: string | null;
+  canAutoReserve?: boolean;
 }
-
-export interface FAQItem {
-  id: string;
-  topic: string;
-  question: string;
-  answer: string;
-}
-
-export interface IntentOption {
-  id: string;
-  label: string;
-  description: string;
-  responseText: string;
-  sedeId?: string;
-  sedeName?: string;
-  icon: "study" | "team" | "social" | "faq";
-}
-
-// Preguntas y Respuestas Frecuentes Reales
-const faqData: FAQItem[] = [
-  {
-    id: "horarios",
-    topic: "Disponibilidad y Horarios",
-    question: "¿Cuáles son los horarios de atención de las sedes?",
-    answer:
-      "Nuestras sedes atienden de Lunes a Domingo de 08:00 a 22:00 hrs. Los días feriados atendemos en un horario especial de 09:00 a 18:00 hrs.",
-  },
-  {
-    id: "tarifas",
-    topic: "Tarifas y Descuentos",
-    question: "¿Cuáles son las tarifas y hay descuento para vecinos de Surco?",
-    answer:
-      "Nuestras tarifas van desde S/ 8.00/hr para escritorios individuales. ¡Sí! Si eres vecino de Surco, obtienes un 50% de descuento automático en tu reserva.",
-  },
-  {
-    id: "proceso",
-    topic: "Proceso de Reserva",
-    question: "¿Cómo es el proceso de reserva y cómo sé que está confirmada?",
-    answer:
-      "¡Es súper fácil! Escoges la sede, seleccionas el día, espacio y tus horas. Al subir tu voucher de Yape/Plin o elegir pago en caja, recibirás un Código de Operación (#RYA-XXXX) que confirma tu cupo al instante.",
-  },
-  {
-    id: "capacidades",
-    topic: "Capacidades",
-    question: "¿Cuál es la capacidad máxima de las salas y espacios privados?",
-    answer:
-      "Los espacios privados son para 2 a 4 personas, las salas de trabajo albergan de 6 a 8 personas y nuestra Sala de Conferencias (en Parque de la Amistad) tiene capacidad para hasta 40 personas.",
-  },
-  {
-    id: "servicios",
-    topic: "Servicios Incluidos",
-    question: "¿Qué servicios están incluidos al alquilar un espacio?",
-    answer:
-      "Todas las reservas incluyen Wi-Fi de alta velocidad (500 Mbps), acceso a la estación de café/té ilimitado, aire acondicionado, enchufes ergonómicos e impresiones básicas sin costo.",
-  },
-  {
-    id: "reprogramacion",
-    topic: "Reprogramación / Cancelación",
-    question: "¿Puedo reprogramar o cancelar mi reserva si surge un imprevisto?",
-    answer:
-      "¡Por supuesto! Puedes reprogramar o cancelar tu reserva sin costo alguno hasta 2 horas antes de la hora de inicio comunicándote por WhatsApp o desde tu panel.",
-  },
-  {
-    id: "ubicaciones",
-    topic: "Ubicaciones y Contacto",
-    question: "¿Dónde están ubicadas las sedes y cuáles son los canales de atención?",
-    answer:
-      "Contamos con sedes en Parque de la Amistad, Surco Pueblo y Castilla. Puedes contactarnos por WhatsApp al +51 987 654 321 o al correo soporte@espaciapp.pe.",
-  },
-];
-
-// Opciones de intención de uso iniciales
-const intentOptions: IntentOption[] = [
-  {
-    id: "opcion-1",
-    label: "Estudiar y concentrarme en silencio",
-    description: "Espacios individuales y tranquilos",
-    responseText:
-      "¡Entendido! Para máxima concentración, te recomiendo los Espacios Individuales en el Parque de la Amistad, ya que está rodeado de áreas verdes y mucha tranquilidad.",
-    sedeId: "parque-amistad",
-    sedeName: "Parque de la Amistad",
-    icon: "study",
-  },
-  {
-    id: "opcion-2",
-    label: "Reunirme a trabajar con mi equipo",
-    description: "Salas de trabajo y reuniones",
-    responseText:
-      "¡Genial! Para dinamismo y trabajo en equipo, las Salas de Trabajo o Reuniones en Surco Pueblo son perfectas y muy céntricas.",
-    sedeId: "surco-pueblo",
-    sedeName: "Surco Pueblo",
-    icon: "team",
-  },
-  {
-    id: "opcion-3",
-    label: "Compartir y socializar con amigos",
-    description: "Zona social y relax",
-    responseText:
-      "¡Excelente plan! Te sugiero la Zona Social de nuestra sede Castilla, diseñada específicamente para relajarse y conversar cómodamente.",
-    sedeId: "castilla",
-    sedeName: "Castilla",
-    icon: "social",
-  },
-  {
-    id: "opcion-4",
-    label: "Tengo otra duda (Preguntas Frecuentes)",
-    description: "Consultas de horarios, tarifas y procesos",
-    responseText:
-      "¡Por supuesto! Aquí tienes nuestro menú de Preguntas Frecuentes. Selecciona una consulta o escribe tu duda.",
-    icon: "faq",
-  },
-];
 
 interface DexAssistantProps {
   onSelectSede?: (sedeId: string) => void;
   onNavigateToSedes?: (sedeId?: string) => void;
-  variant?: "floating" | "inline";
+  onReserveFromDex?: (sedeId: string, spaceId?: string) => void;
 }
+
+const QUICK_SUGGESTIONS = [
+  "Espacio silencioso para estudiar",
+  "Oficina privada para llamadas",
+  "Sala para reunirme con mi equipo",
+  "¿Qué beneficios tienen vecinos de Surco?",
+];
 
 export default function DexAssistant({
   onSelectSede,
   onNavigateToSedes,
-  variant = "floating",
+  onReserveFromDex,
 }: DexAssistantProps) {
-  const isInline = variant === "inline";
-  // 1. Estado abierto por defecto al cargar la página
-  const [isOpen, setIsOpen] = useState(true);
-  const [isTyping, setIsTyping] = useState(false);
-  const [inputValue, setInputValue] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [inputMessage, setInputMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Paso del flujo conversacional: 'intents' | 'recommendation' | 'faqs'
-  const [chatStep, setChatStep] = useState<"intents" | "recommendation" | "faqs">(
-    "intents"
-  );
-  const [lastRecommendedSedeId, setLastRecommendedSedeId] = useState<
-    string | undefined
-  >(undefined);
-
-  // Mensaje inicial de Dex
-  const [messages, setMessages] = useState<Message[]>([
+  const [messages, setMessages] = useState<DexMessage[]>([
     {
-      id: "init",
+      id: "msg-welcome",
       sender: "dex",
-      text: "¡Hola! Soy Dex. ¿Qué tipo de ambiente buscas hoy? Te ayudaré a encontrar tu espacio ideal.",
+      text: "¡Hola! Soy Dex, tu asesor de coworking con IA. Cuéntame qué necesitas (¿estudias solo, vienes con equipo o requieres privacidad?) y te recomendaré el espacio y sede exactos.",
     },
   ]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
-      scrollToBottom();
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+      setTimeout(() => inputRef.current?.focus(), 150);
     }
-  }, [messages, isTyping, isOpen, chatStep]);
+  }, [messages, isOpen]);
 
-  // Manejador para acción "Ver esta sede"
-  const handleVerSede = (sedeId?: string) => {
-    if (!isInline) {
-      setIsOpen(false);
-    }
-    if (onNavigateToSedes) {
-      onNavigateToSedes(sedeId);
-    } else if (onSelectSede && sedeId) {
-      onSelectSede(sedeId);
-    } else {
-      const element = document.getElementById("sedes");
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
+  const handleSendMessage = async (textToSend?: string) => {
+    const text = (textToSend || inputMessage).trim();
+    if (!text || isLoading) return;
+
+    const userMessage: DexMessage = {
+      id: `user-${Date.now()}`,
+      sender: "user",
+      text,
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInputMessage("");
+    setIsLoading(true);
+
+    try {
+      const res = await fetch("/api/dex", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const dexReply: DexMessage = {
+          id: `dex-${Date.now()}`,
+          sender: "dex",
+          text: data.reply || "He analizado tu consulta.",
+          recommendedSedeId: data.recommendedSedeId,
+          recommendedSpaceId: data.recommendedSpaceId,
+          canAutoReserve: data.canAutoReserve,
+        };
+        setMessages((prev) => [...prev, dexReply]);
       } else {
-        window.scrollTo({ top: 0, behavior: "smooth" });
+        throw new Error("Respuesta no exitosa");
       }
+    } catch {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: `dex-err-${Date.now()}`,
+          sender: "dex",
+          text: "Te sugiero explorar nuestras opciones en Parque de la Amistad o Surco Pueblo. ¿Te gustaría ver las sedes?",
+          recommendedSedeId: "parque-amistad",
+          recommendedSpaceId: "individuales",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  // Manejador al hacer clic en una Intención de Uso (Opciones 1, 2, 3 o 4)
-  const handleSelectIntent = (option: IntentOption) => {
-    if (isTyping) return;
-
-    // 1. Agregar mensaje del usuario inmediatamente
-    const userMsg: Message = {
-      id: Date.now().toString() + "-user",
-      sender: "user",
-      text: option.label,
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-
-    // 2. Simulación de tipeo (500ms)
-    setTimeout(() => {
-      const dexMsg: Message = {
-        id: Date.now().toString() + "-dex",
-        sender: "dex",
-        text: option.responseText,
-        actionSedeId: option.sedeId,
-        actionSedeName: option.sedeName,
-      };
-
-      setMessages((prev) => [...prev, dexMsg]);
-      setIsTyping(false);
-
-      if (option.id === "opcion-4") {
-        setChatStep("faqs");
-      } else {
-        setChatStep("recommendation");
-        setLastRecommendedSedeId(option.sedeId);
-      }
-    }, 500);
-  };
-
-  // Manejador al hacer clic en una pregunta frecuente (FAQ)
-  const handleSelectFAQ = (faq: FAQItem) => {
-    if (isTyping) return;
-
-    const userMsg: Message = {
-      id: Date.now().toString() + "-user",
-      sender: "user",
-      text: faq.question,
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-
-    setTimeout(() => {
-      const dexMsg: Message = {
-        id: Date.now().toString() + "-dex",
-        sender: "dex",
-        text: faq.answer,
-      };
-
-      setMessages((prev) => [...prev, dexMsg]);
-      setIsTyping(false);
-    }, 500);
-  };
-
-  // Manejador de envío por input manual
-  const handleSendInput = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!inputValue.trim() || isTyping) return;
-
-    const userText = inputValue.trim();
-    setInputValue("");
-
-    const userMsg: Message = {
-      id: Date.now().toString() + "-user",
-      sender: "user",
-      text: userText,
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
-    setIsTyping(true);
-
-    const matchedFaq = faqData.find(
-      (f) =>
-        f.question.toLowerCase().includes(userText.toLowerCase()) ||
-        f.topic.toLowerCase().includes(userText.toLowerCase())
-    );
-
-    const responseText = matchedFaq
-      ? matchedFaq.answer
-      : `Gracias por tu consulta sobre "${userText}". Nuestro equipo estará encantado de atenderte. ¿Deseas explorar alguna otra recomendación u otra duda?`;
-
-    setTimeout(() => {
-      const dexMsg: Message = {
-        id: Date.now().toString() + "-dex",
-        sender: "dex",
-        text: responseText,
-      };
-
-      setMessages((prev) => [...prev, dexMsg]);
-      setIsTyping(false);
-    }, 500);
-  };
-
-  // Resetear conversación al estado inicial de intenciones
-  const handleResetMenu = () => {
-    setChatStep("intents");
-    setLastRecommendedSedeId(undefined);
+  const handleResetChat = () => {
     setMessages([
       {
-        id: Date.now().toString(),
+        id: "msg-welcome-reset",
         sender: "dex",
-        text: "¡Hola! Soy Dex. ¿Qué tipo de ambiente buscas hoy? Te ayudaré a encontrar tu espacio ideal.",
+        text: "¡Conversación reiniciada! Dime qué buscas hoy y te guiaré con gusto.",
       },
     ]);
   };
 
-  // Renderizar ícono correspondiente para las intenciones
-  const renderIntentIcon = (icon: IntentOption["icon"]) => {
-    switch (icon) {
-      case "study":
-        return <BookOpen className="w-4 h-4 text-blue-600 group-hover:text-white flex-shrink-0" />;
-      case "team":
-        return <Users className="w-4 h-4 text-blue-600 group-hover:text-white flex-shrink-0" />;
-      case "social":
-        return <Coffee className="w-4 h-4 text-blue-600 group-hover:text-white flex-shrink-0" />;
-      case "faq":
-        return <HelpCircle className="w-4 h-4 text-blue-600 group-hover:text-white flex-shrink-0" />;
-      default:
-        return <Compass className="w-4 h-4 text-blue-600 group-hover:text-white flex-shrink-0" />;
+  const handleExecuteReservation = (sedeId: string, spaceId?: string) => {
+    if (onReserveFromDex) {
+      onReserveFromDex(sedeId, spaceId);
+    } else if (onSelectSede) {
+      onSelectSede(sedeId);
+    } else if (onNavigateToSedes) {
+      onNavigateToSedes(sedeId);
     }
+    setIsOpen(false);
   };
 
-  const containerClasses = isInline
-    ? "w-full max-w-2xl mx-auto font-sans text-left my-2"
-    : "fixed bottom-6 right-6 z-50 font-sans";
+  // Obtener información visual de la sede recomendada
+  const getSedeInfo = (sedeId?: string | null): SedeInfo | null => {
+    if (!sedeId) return null;
+    return SEDES_DATABASE[sedeId] || null;
+  };
 
-  const cardClasses = isInline
-    ? "w-full bg-white border border-blue-200 rounded-3xl shadow-xl overflow-hidden flex flex-col h-[520px] transition-all animate-fade-in"
-    : "w-80 sm:w-96 bg-white border border-gray-200 rounded-3xl shadow-2xl overflow-hidden mb-4 flex flex-col h-[530px] transition-all animate-fade-in";
+  const getSpaceInfo = (
+    sede: SedeInfo | null,
+    spaceId?: string | null
+  ): SpaceCategory | null => {
+    if (!sede || !spaceId) return null;
+    return (
+      sede.spaces.find((s) => s.id === spaceId || s.id.includes(spaceId)) ||
+      sede.spaces[0]
+    );
+  };
 
   return (
-    <div className={containerClasses}>
-      {/* Ventana Emergente / Tarjeta de Chat */}
-      {(isOpen || isInline) && (
-        <div className={cardClasses}>
-          {/* Header del Chat */}
-          <div className="bg-blue-600 text-white p-4 flex items-center justify-between shadow-md">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center font-bold text-white shadow-inner">
-                <Bot className="w-6 h-6" />
+    <div className="fixed bottom-6 right-6 z-50 font-sans">
+      {/* Botón flotante para abrir Dex */}
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          type="button"
+          aria-label="Abrir asistente Dex"
+          className="group flex items-center gap-3 bg-gradient-to-r from-blue-600 to-sky-600 hover:from-blue-700 hover:to-sky-700 text-white px-4 py-3 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105 active:scale-95 cursor-pointer border border-white/20"
+        >
+          <div className="relative">
+            <Bot className="w-6 h-6 text-white animate-bounce-subtle" />
+            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-white rounded-full animate-pulse" />
+          </div>
+          <div className="text-left pr-1">
+            <span className="text-xs font-black tracking-wide block leading-none">
+              DEX IA
+            </span>
+            <span className="text-[11px] text-blue-100 font-medium leading-tight">
+              ¿Te ayudo a reservar?
+            </span>
+          </div>
+        </button>
+      )}
+
+      {/* Ventana de Chat Dex Modernizada */}
+      {isOpen && (
+        <div className="w-[360px] sm:w-[410px] h-[580px] max-h-[85vh] bg-white rounded-3xl shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden animate-fade-in">
+          {/* Header estilizado */}
+          <div className="bg-gradient-to-r from-blue-600 via-blue-700 to-sky-600 text-white px-5 py-4 flex items-center justify-between shadow-md relative overflow-hidden shrink-0">
+            <div className="flex items-center gap-3 relative z-10">
+              <div className="w-10 h-10 rounded-2xl bg-white/15 backdrop-blur-md border border-white/20 flex items-center justify-center shadow-xs">
+                <Bot className="w-5 h-5 text-white" />
               </div>
               <div>
-                <h3 className="font-bold text-sm leading-tight flex items-center gap-1.5">
-                  Dex <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
-                </h3>
-                <p className="text-xs text-blue-100 font-medium">
-                  Recomendador & Asistente Virtual
+                <div className="flex items-center gap-2">
+                  <h3 className="text-sm font-black tracking-tight">Dex Asesor</h3>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-extrabold bg-emerald-400/25 border border-emerald-300/40 text-emerald-100 px-2 py-0.2 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    IA Activa
+                  </span>
+                </div>
+                <p className="text-[11px] text-blue-100 font-medium">
+                  EspaciApp Surco
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 relative z-10">
               <button
-                onClick={handleResetMenu}
-                title="Reiniciar recomendaciones"
-                className="p-1.5 rounded-xl hover:bg-white/20 text-white transition-colors cursor-pointer"
-                aria-label="Reiniciar menú"
+                onClick={handleResetChat}
+                type="button"
+                title="Reiniciar chat"
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/15 rounded-xl transition-colors cursor-pointer"
               >
-                <RefreshCw className="w-4 h-4" />
+                <RotateCcw className="w-4 h-4" />
               </button>
-              {!isInline && (
-                <button
-                  onClick={() => setIsOpen(false)}
-                  className="p-1.5 rounded-xl hover:bg-white/20 text-white transition-colors cursor-pointer"
-                  aria-label="Cerrar chat"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
+
+              <button
+                onClick={() => setIsOpen(false)}
+                type="button"
+                title="Cerrar"
+                className="p-1.5 text-white/80 hover:text-white hover:bg-white/15 rounded-xl transition-colors cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
           </div>
 
-          {/* Cuerpo con Burbujas de Conversación */}
-          <div className="flex-grow p-4 overflow-y-auto space-y-3 bg-gray-50/50">
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex ${
-                  msg.sender === "user" ? "justify-end" : "justify-start"
-                }`}
-              >
+          {/* Área de Mensajes */}
+          <div className="flex-1 p-4 overflow-y-auto space-y-3.5 bg-slate-50/70 text-xs">
+            {messages.map((msg) => {
+              const isDex = msg.sender === "dex";
+              const sede = getSedeInfo(msg.recommendedSedeId);
+              const space = getSpaceInfo(sede, msg.recommendedSpaceId);
+
+              return (
                 <div
-                  className={`max-w-[85%] px-4 py-3 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-sm flex flex-col gap-2.5 ${
-                    msg.sender === "user"
-                      ? "bg-blue-600 text-white rounded-br-none font-medium"
-                      : "bg-white border border-gray-200 text-gray-800 rounded-bl-none"
+                  key={msg.id}
+                  className={`flex flex-col ${
+                    isDex ? "items-start" : "items-end"
                   }`}
                 >
-                  <div>{msg.text}</div>
+                  {/* Burbuja de Texto */}
+                  <div
+                    className={`max-w-[88%] rounded-2xl px-4 py-3 leading-relaxed shadow-xs text-xs sm:text-[13px] ${
+                      isDex
+                        ? "bg-white text-slate-800 border border-slate-200/90 rounded-tl-xs"
+                        : "bg-gradient-to-r from-blue-600 to-sky-600 text-white font-medium rounded-tr-xs"
+                    }`}
+                  >
+                    <div className="whitespace-pre-line space-y-1.5">
+                      {msg.text.split("\n\n").map((paragraph, pIdx) => {
+                        // Renderizar negritas simples **texto**
+                        const parts = paragraph.split(/(\*\*[^*]+\*\*)/g);
+                        return (
+                          <p key={pIdx}>
+                            {parts.map((part, idx) => {
+                              if (part.startsWith("**") && part.endsWith("**")) {
+                                return (
+                                  <strong key={idx} className="font-bold text-slate-900">
+                                    {part.slice(2, -2)}
+                                  </strong>
+                                );
+                              }
+                              return part;
+                            })}
+                          </p>
+                        );
+                      })}
+                    </div>
+                  </div>
 
-                  {/* Botón de Acción Rápida "Ver esta sede" dentro del chat */}
-                  {msg.sender === "dex" && msg.actionSedeId && (
-                    <div className="pt-1">
+                  {/* Tarjeta de Recomendación y Reserva Guiada */}
+                  {isDex && sede && space && (
+                    <div className="mt-2.5 w-[92%] bg-white rounded-2xl border border-sky-200/80 p-3.5 shadow-sm space-y-2.5 animate-fade-in">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <span className="text-[10px] font-extrabold uppercase tracking-wider text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md border border-blue-100 flex items-center gap-1 inline-flex mb-1">
+                            <Sparkles className="w-3 h-3 text-blue-500" />
+                            Elección recomendada
+                          </span>
+                          <h4 className="font-bold text-slate-900 text-xs">
+                            {space.name}
+                          </h4>
+                          <div className="flex items-center gap-1 text-[11px] text-slate-500 mt-0.5">
+                            <MapPin className="w-3 h-3 text-blue-500 shrink-0" />
+                            <span>{sede.name}</span>
+                          </div>
+                        </div>
+
+                        <span className="text-[11px] font-black text-slate-900 bg-amber-50 border border-amber-200 px-2 py-1 rounded-lg">
+                          S/ {space.pricePerHour || 15}.00/hr
+                        </span>
+                      </div>
+
+                      <p className="text-[11px] text-slate-600 leading-snug line-clamp-2">
+                        {space.description}
+                      </p>
+
+                      {/* Botón directo para que Dex reserve por el usuario */}
                       <button
-                        onClick={() => handleVerSede(msg.actionSedeId)}
+                        onClick={() =>
+                          handleExecuteReservation(sede.id, space.id)
+                        }
                         type="button"
-                        className="w-full inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white text-xs font-bold transition-all shadow-sm cursor-pointer group"
+                        className="w-full inline-flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all shadow-xs hover:shadow cursor-pointer"
                       >
-                        <MapPin className="w-3.5 h-3.5 text-blue-200 group-hover:scale-110 transition-transform" />
-                        <span>Ver esta sede</span>
-                        <ArrowRight className="w-3.5 h-3.5 ml-auto text-white/80 group-hover:translate-x-0.5 transition-transform" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                        <span>Reservar este espacio ahora</span>
+                        <ArrowRight className="w-3.5 h-3.5 text-white" />
                       </button>
                     </div>
                   )}
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
-            {/* Animación de Escribiendo (Typing indicator) */}
-            {isTyping && (
-              <div className="flex justify-start">
-                <div className="bg-white border border-gray-200 text-gray-500 px-4 py-2.5 rounded-2xl rounded-bl-none text-xs flex items-center gap-1.5 shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce"></span>
-                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.2s]"></span>
-                  <span className="w-2 h-2 rounded-full bg-blue-600 animate-bounce [animation-delay:0.4s]"></span>
-                  <span className="ml-1 text-gray-400 font-medium">
-                    Dex está escribiendo...
-                  </span>
-                </div>
+            {/* Indicador de que Dex está razonando */}
+            {isLoading && (
+              <div className="flex items-center gap-2 bg-white text-slate-500 px-3.5 py-2.5 rounded-2xl border border-slate-200/80 w-fit shadow-2xs">
+                <Sparkles className="w-3.5 h-3.5 text-blue-600 animate-spin" />
+                <span className="text-[11px] font-medium text-slate-600">
+                  Dex está analizando y razonando tu mejor opción...
+                </span>
               </div>
             )}
 
             <div ref={messagesEndRef} />
           </div>
 
-          {/* PANEL INTERACTIVO DE NAVEGACIÓN Y OPCIONES */}
+          {/* Preguntas o Sugerencias Rápidas (Chips cómodos y armónicos) */}
+          <div className="px-3 pt-2 pb-1.5 bg-white border-t border-slate-100 flex gap-1.5 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] shrink-0">
+            {QUICK_SUGGESTIONS.map((sug, idx) => (
+              <button
+                key={idx}
+                onClick={() => handleSendMessage(sug)}
+                type="button"
+                className="whitespace-nowrap px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-600 hover:text-blue-700 text-[11px] font-semibold border border-slate-200/60 transition-colors cursor-pointer shrink-0"
+              >
+                {sug}
+              </button>
+            ))}
+          </div>
 
-          {/* 1. Modo Intenciones de Uso (Opciones 1, 2, 3 y 4) */}
-          {chatStep === "intents" && (
-            <div className="p-3 bg-white border-t border-gray-100 space-y-2">
-              <p className="text-[11px] font-bold text-gray-400 px-1 uppercase tracking-wider flex items-center gap-1">
-                <Compass className="w-3.5 h-3.5 text-blue-600" /> Elige tu intención de uso:
-              </p>
-              <div className="grid grid-cols-1 gap-1.5 max-h-48 overflow-y-auto pr-1">
-                {intentOptions.map((option) => (
-                  <button
-                    key={option.id}
-                    onClick={() => handleSelectIntent(option)}
-                    disabled={isTyping}
-                    className="text-xs bg-blue-50/70 hover:bg-blue-600 text-blue-900 hover:text-white px-3 py-2.5 rounded-xl font-medium transition-all border border-blue-100 text-left flex items-center justify-between group cursor-pointer disabled:opacity-50 shadow-2xs hover:shadow-md"
-                  >
-                    <div className="flex items-center gap-2">
-                      {renderIntentIcon(option.icon)}
-                      <span className="font-semibold">{option.label}</span>
-                    </div>
-                    <Sparkles className="w-3.5 h-3.5 text-blue-500 group-hover:text-white flex-shrink-0 ml-1.5 opacity-70" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 2. Modo Recomendación dada (Boton de acción directa + cambiar intención) */}
-          {chatStep === "recommendation" && !isTyping && (
-            <div className="p-3 bg-white border-t border-gray-100 flex flex-col gap-2">
-              {lastRecommendedSedeId && (
-                <button
-                  onClick={() => handleVerSede(lastRecommendedSedeId)}
-                  type="button"
-                  className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-md cursor-pointer"
-                >
-                  <MapPin className="w-4 h-4" />
-                  <span>Ver esta sede</span>
-                  <ArrowRight className="w-4 h-4 ml-auto" />
-                </button>
-              )}
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setChatStep("intents")}
-                  type="button"
-                  className="flex-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-2.5 rounded-xl font-medium text-center transition-colors border border-gray-200 cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <RefreshCw className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Otras opciones</span>
-                </button>
-                <button
-                  onClick={() => setChatStep("faqs")}
-                  type="button"
-                  className="flex-1 text-xs bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-2.5 rounded-xl font-medium text-center transition-colors border border-blue-100 cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <HelpCircle className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Preguntas Frecuentes</span>
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* 3. Modo FAQs (Lista scrollable + buscador) */}
-          {chatStep === "faqs" && (
-            <div className="p-3 bg-white border-t border-gray-100">
-              <div className="flex items-center justify-between mb-2 px-1">
-                <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider flex items-center gap-1">
-                  <HelpCircle className="w-3.5 h-3.5 text-blue-600" /> Consultas frecuentes:
-                </p>
-                <button
-                  onClick={() => setChatStep("intents")}
-                  type="button"
-                  className="text-[11px] font-bold text-blue-600 hover:underline flex items-center gap-1 cursor-pointer"
-                >
-                  <Compass className="w-3 h-3" /> Ver recomendador
-                </button>
-              </div>
-              <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto pr-1 text-left">
-                {faqData.map((faq) => (
-                  <button
-                    key={faq.id}
-                    onClick={() => handleSelectFAQ(faq)}
-                    disabled={isTyping}
-                    className="text-xs bg-blue-50/80 text-blue-700 hover:bg-blue-600 hover:text-white px-3 py-2 rounded-xl font-medium transition-colors border border-blue-100 text-left flex items-center justify-between group cursor-pointer disabled:opacity-50"
-                  >
-                    <span className="line-clamp-1">{faq.question}</span>
-                    <Sparkles className="w-3.5 h-3.5 text-blue-500 group-hover:text-white flex-shrink-0 ml-1 opacity-70" />
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Formulario de Input Manual (Para consultas abiertas) */}
+          {/* Formulario de Input */}
           <form
-            onSubmit={handleSendInput}
-            className="p-3 bg-white border-t border-gray-200 flex items-center gap-2"
+            onSubmit={(e) => {
+              e.preventDefault();
+              handleSendMessage();
+            }}
+            className="p-3 bg-white border-t border-slate-100 flex items-center gap-2 shrink-0"
           >
             <input
+              ref={inputRef}
               type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Escribe tu consulta..."
-              className="flex-grow text-xs sm:text-sm px-3.5 py-2.5 bg-gray-100 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-800"
+              value={inputMessage}
+              onChange={(e) => setInputMessage(e.target.value)}
+              placeholder="Escribe lo que necesitas (ej: somos 4 personas)..."
+              className="flex-1 bg-slate-100 hover:bg-slate-100/80 focus:bg-white text-slate-900 placeholder:text-slate-400 text-xs px-3.5 py-2.5 rounded-2xl border border-transparent focus:border-blue-500 focus:outline-none transition-all"
             />
             <button
               type="submit"
-              disabled={!inputValue.trim() || isTyping}
-              className="p-2.5 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              disabled={!inputMessage.trim() || isLoading}
+              aria-label="Enviar a Dex"
+              className="w-10 h-10 rounded-2xl bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white flex items-center justify-center transition-all shadow-xs shrink-0 cursor-pointer disabled:cursor-not-allowed"
             >
-              <Send className="w-4 h-4" />
+              <Send className="w-4 h-4 text-white" />
             </button>
           </form>
         </div>
-      )}
-
-      {/* Botón Circular Flotante (Solo para variant floating cuando está cerrado) */}
-      {!isInline && !isOpen && (
-        <button
-          onClick={() => setIsOpen(true)}
-          type="button"
-          className="w-14 h-14 rounded-full bg-blue-600 text-white shadow-2xl hover:bg-blue-700 hover:scale-110 active:scale-95 transition-all flex items-center justify-center group relative cursor-pointer ring-4 ring-blue-600/20"
-          aria-label="Abrir asistente virtual Dex"
-        >
-          <Bot className="w-7 h-7 text-white" />
-          <span className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-400 border-2 border-white rounded-full"></span>
-
-          <span className="absolute right-16 bg-gray-900 text-white text-xs font-semibold px-3 py-1.5 rounded-xl whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none shadow-md">
-            ¿Dudas? Habla con Dex 🤖
-          </span>
-        </button>
       )}
     </div>
   );

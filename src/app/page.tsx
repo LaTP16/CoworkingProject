@@ -239,19 +239,25 @@ export default function Home() {
 
       <Footer />
 
-      {/* Asistente Virtual Global Dex (Flotante en sedes, reserva, datos y pago) */}
-      {vistaActual !== "inicio" && (
-        <DexAssistant
-          onSelectSede={handleSeleccionarSede}
-          onNavigateToSedes={(sedeId) => {
-            if (sedeId) {
-              handleSeleccionarSede(sedeId);
-            } else {
-              handleIrASedes();
-            }
-          }}
-        />
-      )}
+      {/* Asistente Virtual Global Dex (Asesor IA con reserva guiada) */}
+      <DexAssistant
+        onSelectSede={handleSeleccionarSede}
+        onNavigateToSedes={(sedeId) => {
+          if (sedeId) {
+            handleSeleccionarSede(sedeId);
+          } else {
+            handleIrASedes();
+          }
+        }}
+        onReserveFromDex={(sedeId, spaceId) => {
+          setSedeSeleccionadaId(sedeId);
+          if (spaceId) {
+            setSelectedSpaceId(spaceId);
+          }
+          setVistaActual("reserva");
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
     </div>
   );
 }
